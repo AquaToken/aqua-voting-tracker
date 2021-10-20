@@ -1,0 +1,2 @@
+class VoteParsingError(Exception):
+    pass
