@@ -29,8 +29,11 @@ class Vote(models.Model):
 
 
 class VotingSnapshotManager(models.Manager):
-    def create_for_timestamp(self, timestamp):
-        vote_stats = Vote.objects.filter_lock_at(timestamp).values('market_key').annotate(
+    def create_for_timestamp(self, timestamp, vote_queryset=None):
+        if vote_queryset is None:
+            vote_queryset = Vote.objects.all()
+
+        vote_stats = vote_queryset.filter_lock_at(timestamp).values('market_key').annotate(
             votes_value=models.Sum('amount'),
             voting_amount=models.Count('voting_account', distinct=True),
         )
@@ -45,7 +48,7 @@ class VotingSnapshotManager(models.Manager):
                     votes_value=vote['votes_value'],
                     voting_amount=vote['voting_amount'],
                     timestamp=timestamp,
-                )
+                ),
             )
 
         self.bulk_create(snapshot_list)

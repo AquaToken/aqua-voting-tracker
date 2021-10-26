@@ -1,5 +1,6 @@
 import environ
 
+
 # Build paths inside the project like this: root(...)
 env = environ.Env()
 
@@ -183,3 +184,5 @@ HORIZON_URL = NotImplemented
 
 VOTING_ASSET_CODE = NotImplemented
 VOTING_ASSET_ISSUER = NotImplemented
+
+MARKETKEYS_TRACKER_URL = NotImplemented

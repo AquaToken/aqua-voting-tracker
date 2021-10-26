@@ -1,7 +1,7 @@
 from stellar_sdk import Asset
 from stellar_sdk.exceptions import AssetIssuerInvalidError
 
-from aqua_voting_tracker.utils.stellar.asset import parse_asset_string, get_asset_string
+from aqua_voting_tracker.utils.stellar.asset import get_asset_string, parse_asset_string
 
 
 class AssetStringConverter:

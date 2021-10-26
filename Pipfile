@@ -36,6 +36,7 @@ djangorestframework = ">=3.10"
 gunicorn = "*"
 Django = ">=3.2,<4.0"
 stellar-sdk = "*"
+requests = "*"
 
 [requires]
 python_version = "3.8"

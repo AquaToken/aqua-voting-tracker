@@ -10,6 +10,7 @@ from stellar_sdk import Server
 from aqua_voting_tracker.taskapp import app as celery_app
 from aqua_voting_tracker.utils.stellar.requests import load_all_records
 from aqua_voting_tracker.voting.exceptions import VoteParsingError
+from aqua_voting_tracker.voting.marketkeys.base import get_marketkeys_provider
 from aqua_voting_tracker.voting.models import Vote, VotingSnapshot
 from aqua_voting_tracker.voting.parser import parse_claimable_balance
 from aqua_voting_tracker.voting.utils import get_voting_asset
@@ -35,9 +36,7 @@ def _parse_vote(claimable_balance: dict):
 def task_load_new_claimable_balances():
     horizon_server = Server(settings.HORIZON_URL)
 
-    request_builder = horizon_server.claimable_balances() \
-        .for_asset(get_voting_asset()) \
-        .order(desc=False)
+    request_builder = horizon_server.claimable_balances().for_asset(get_voting_asset()).order(desc=False)
 
     cursor = cache.get(CLAIMABLE_BALANCES_CURSOR_CACHE_KEY, None)
 
@@ -68,4 +67,6 @@ def task_create_voting_snapshot():
     now = timezone.now()
     timestamp = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    VotingSnapshot.objects.create_for_timestamp(timestamp)
+    marketkeys_provider = get_marketkeys_provider()
+    vote_queryset = Vote.objects.filter(market_key__in=iter(marketkeys_provider))
+    VotingSnapshot.objects.create_for_timestamp(timestamp, vote_queryset=vote_queryset)

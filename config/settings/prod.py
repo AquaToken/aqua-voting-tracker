@@ -5,6 +5,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 from config.settings.base import *  # noqa: F403
 
+
 environ.Env.read_env()
 
 
@@ -92,3 +93,5 @@ HORIZON_URL = 'https://horizon.stellar.lobstr.co'
 
 VOTING_ASSET_CODE = env('VOTING_ASSET_CODE')
 VOTING_ASSET_ISSUER = env('VOTING_ASSET_ISSUER')
+
+MARKETKEYS_TRACKER_URL = env('MARKETKEYS_TRACKER_URL')
