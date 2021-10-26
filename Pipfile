@@ -38,6 +38,7 @@ Django = ">=3.2,<4.0"
 python-dateutil = "*"
 stellar-sdk = "*"
 requests = "*"
+django-redis = "*"
 
 [requires]
 python_version = "3.8"
