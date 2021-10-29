@@ -12,6 +12,7 @@ def load_all_records(request_builder, start_cursor=None, page_size=200):
 
         for record in records:
             yield record
+            cursor = record['paging_token']
 
         if len(records) < page_size:
             break
