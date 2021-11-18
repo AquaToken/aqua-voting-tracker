@@ -50,11 +50,17 @@ def parse_claimable_balance(claimable_balance: dict):
     balance_created_at = claimable_balance['last_modified_time']
     market_key, voting_key, locked_until = parse_claimants(claimable_balance)
 
+    try:
+        balance_created_at = date_parse(balance_created_at)
+        locked_until = date_parse(locked_until)
+    except ValueError:
+        VoteParsingError('Invalid date format.')
+
     return Vote(
         balance_id=balance_id,
         voting_account=voting_key,
         market_key=market_key,
         amount=amount,
-        locked_at=date_parse(balance_created_at),
-        locked_until=date_parse(locked_until),
+        locked_at=balance_created_at,
+        locked_until=locked_until,
     )
