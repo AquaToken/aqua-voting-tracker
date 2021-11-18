@@ -54,7 +54,7 @@ def parse_claimable_balance(claimable_balance: dict):
         balance_created_at = date_parse(balance_created_at)
         locked_until = date_parse(locked_until)
     except ValueError:
-        VoteParsingError('Invalid date format.')
+        raise VoteParsingError('Invalid date format.')
 
     return Vote(
         balance_id=balance_id,
