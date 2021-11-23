@@ -31,9 +31,33 @@ class MultiGetVotingSnapshotView(ListModelMixin, BaseVotingSnapshotView):
         return self.list(request, *args, **kwargs)
 
 
-class TopVotingSnapshotView(ListModelMixin, BaseVotingSnapshotView):
-    queryset = BaseVotingSnapshotView.queryset.order_by('rank')
+class TopVotedSnapshotView(ListModelMixin, BaseVotingSnapshotView):
+    queryset = BaseVotingSnapshotView.queryset.order_by('-voting_amount')
     pagination_class = VotingSnapshotCursorPagination
+
+    @property
+    def paginator(self):
+        paginator = super(TopVotedSnapshotView, self).paginator
+        if paginator.ordering is NotImplemented:
+            paginator.ordering = '-voting_amount'
+
+        return paginator
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class TopVolumeSnapshotView(ListModelMixin, BaseVotingSnapshotView):
+    queryset = BaseVotingSnapshotView.queryset.order_by('-votes_value')
+    pagination_class = VotingSnapshotCursorPagination
+
+    @property
+    def paginator(self):
+        paginator = super(TopVolumeSnapshotView, self).paginator
+        if paginator.ordering is NotImplemented:
+            paginator.ordering = '-votes_value'
+
+        return paginator
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
