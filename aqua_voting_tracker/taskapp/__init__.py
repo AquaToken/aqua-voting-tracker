@@ -26,7 +26,7 @@ def setup_periodic_tasks(sender, **kwargs):
         },
         'aqua_voting_tracker.voting.tasks.task_create_voting_snapshot': {
             'task': 'aqua_voting_tracker.voting.tasks.task_create_voting_snapshot',
-            'schedule': crontab(hour=0, minute=10),
+            'schedule': crontab(minute=10),
             'args': (),
         },
     })
