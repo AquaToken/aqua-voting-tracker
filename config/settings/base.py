@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import environ
 
 
@@ -186,3 +188,5 @@ VOTING_ASSET_CODE = NotImplemented
 VOTING_ASSET_ISSUER = NotImplemented
 
 MARKETKEYS_TRACKER_URL = NotImplemented
+
+VOTING_MIN_TERM = timedelta(hours=1)

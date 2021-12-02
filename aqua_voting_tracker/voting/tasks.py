@@ -69,4 +69,5 @@ def task_create_voting_snapshot():
 
     marketkeys_provider = get_marketkeys_provider()
     vote_queryset = Vote.objects.filter(market_key__in=iter(marketkeys_provider))
+    vote_queryset = vote_queryset.filter_by_min_term(settings.VOTING_MIN_TERM)
     VotingSnapshot.objects.create_for_timestamp(timestamp, vote_queryset=vote_queryset)

@@ -5,6 +5,9 @@ class VoteQuerySet(models.QuerySet):
     def filter_lock_at(self, time_filter):
         return self.filter(locked_at__lte=time_filter, locked_until__gt=time_filter)
 
+    def filter_by_min_term(self, min_term):
+        return self.annotate(term=models.F('locked_until') - models.F('locked_at')).filter(term__gte=min_term)
+
 
 class Vote(models.Model):
     balance_id = models.CharField(max_length=72, unique=True)
