@@ -65,7 +65,7 @@ def task_load_new_claimable_balances():
 @celery_app.task(ignore_result=True)
 def task_create_voting_snapshot():
     now = timezone.now()
-    timestamp = now.replace(minute=0, second=0, microsecond=0)
+    timestamp = now.replace(minute=now.minute // 5 * 5, second=0, microsecond=0) - timezone.timedelta(minutes=5)
 
     marketkeys_provider = get_marketkeys_provider()
     vote_queryset = Vote.objects.filter(market_key__in=iter(marketkeys_provider))
