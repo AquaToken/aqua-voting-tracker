@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from asgiref.sync import sync_to_async
 from dateutil.parser import parse as date_parse
-from stellar_sdk import Server, ServerAsync
+from stellar_sdk import Server, ServerAsync, AiohttpClient
 
 from aqua_voting_tracker.taskapp import app as celery_app
 from aqua_voting_tracker.utils.stellar.requests import load_all_records
@@ -78,7 +78,7 @@ async def _update_claim_back_time(vote: Vote, *, server: ServerAsync):
 
 
 async def _bunch_update_claim_back_time(votes: Iterable[Vote]):
-    async with ServerAsync(settings.HORIZON_URL) as server:
+    async with ServerAsync(settings.HORIZON_URL, client=AiohttpClient(request_timeout=60)) as server:
         await asyncio.gather(*[_update_claim_back_time(vote, server=server)
                                for vote in votes])
 
