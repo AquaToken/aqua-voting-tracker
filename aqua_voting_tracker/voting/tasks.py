@@ -1,11 +1,15 @@
+import asyncio
 import logging
 import sys
+from typing import Iterable
 
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
-from stellar_sdk import Server
+from asgiref.sync import sync_to_async
+from dateutil.parser import parse as date_parse
+from stellar_sdk import Server, ServerAsync
 
 from aqua_voting_tracker.taskapp import app as celery_app
 from aqua_voting_tracker.utils.stellar.requests import load_all_records
@@ -60,6 +64,30 @@ def task_load_new_claimable_balances():
                   CLAIMABLE_BALANCES_CACHE_TIMEOUT)
 
     Vote.objects.bulk_create(new_votes)
+
+
+async def _update_claim_back_time(vote: Vote, *, server: ServerAsync):
+    response = await server.operations().for_claimable_balance(vote.balance_id).order(desc=True).limit(1).call()
+    operation = response['_embedded']['records'][0]
+
+    if operation['type'] != 'claim_claimable_balance':
+        return
+
+    vote.claimed_back_at = date_parse(operation['created_at'])
+    await sync_to_async(vote.save)()
+
+
+async def _bunch_update_claim_back_time(votes: Iterable[Vote]):
+    async with ServerAsync(settings.HORIZON_URL) as server:
+        await asyncio.gather(*[_update_claim_back_time(vote, server=server)
+                               for vote in votes])
+
+
+@celery_app.task(ignore_result=True)
+def task_update_claim_back_time():
+    now = timezone.now()
+    votes = list(Vote.objects.filter(locked_until__lt=now, claimed_back_at__isnull=True))
+    asyncio.run(_bunch_update_claim_back_time(votes))
 
 
 @celery_app.task(ignore_result=True)

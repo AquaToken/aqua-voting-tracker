@@ -24,6 +24,11 @@ def setup_periodic_tasks(sender, **kwargs):
             'schedule': crontab(minute='*/5'),
             'args': (),
         },
+        'aqua_voting_tracker.voting.tasks.task_update_claim_back_time': {
+            'task': 'aqua_voting_tracker.voting.tasks.task_update_claim_back_time',
+            'schedule': crontab(minute='2-59/5'),  # 5n+2
+            'args': (),
+        },
         'aqua_voting_tracker.voting.tasks.task_create_voting_snapshot': {
             'task': 'aqua_voting_tracker.voting.tasks.task_create_voting_snapshot',
             'schedule': crontab(minute='*/5'),

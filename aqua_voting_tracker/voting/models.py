@@ -8,6 +8,15 @@ class VoteQuerySet(models.QuerySet):
     def filter_by_min_term(self, min_term):
         return self.annotate(term=models.F('locked_until') - models.F('locked_at')).filter(term__gte=min_term)
 
+    def filter_exist_at(self, time_filter):
+        return self.filter(
+            models.Q(locked_at__lte=time_filter)
+            & models.Q(
+                models.Q(claimed_back_at__isnull=True)
+                | models.Q(claimed_back_at__gt=time_filter)
+            )
+        )
+
 
 class Vote(models.Model):
     balance_id = models.CharField(max_length=72, unique=True)
@@ -19,6 +28,7 @@ class Vote(models.Model):
 
     locked_at = models.DateTimeField()
     locked_until = models.DateTimeField()
+    claimed_back_at = models.DateTimeField(null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -36,7 +46,7 @@ class VotingSnapshotManager(models.Manager):
         if vote_queryset is None:
             vote_queryset = Vote.objects.all()
 
-        vote_stats = vote_queryset.filter_lock_at(timestamp).values('market_key').annotate(
+        vote_stats = vote_queryset.filter_exist_at(timestamp).values('market_key').annotate(
             votes_value=models.Sum('amount'),
             voting_amount=models.Count('voting_account', distinct=True),
         )
@@ -59,8 +69,6 @@ class VotingSnapshotManager(models.Manager):
         return snapshot_list
 
     def filter_last_snapshot(self):
-        # I use slice here instead of "first" method because "first" method make database request.
-        # Through slice it works as subquery.
         last_snapshot_timestamp = self.order_by('-timestamp').values('timestamp')[:1]
         return self.filter(timestamp=models.Subquery(last_snapshot_timestamp))
 
