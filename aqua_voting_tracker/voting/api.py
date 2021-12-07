@@ -53,6 +53,8 @@ class VotingSnapshotStatsView(APIView):
     permission_classes = (AllowAny, )
 
     def get(self, request, *args, **kwargs):
+        stats = VotingSnapshot.objects.current_stats()
+        stats['votes_value_sum'] = str(stats['votes_value_sum'])
         return Response(
-            VotingSnapshot.objects.current_stats(),
+            stats,
         )
