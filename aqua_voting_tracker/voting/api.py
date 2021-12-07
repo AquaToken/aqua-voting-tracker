@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from aqua_voting_tracker.utils.drf.filters import MultiGetFilterBackend
 from aqua_voting_tracker.voting.models import VotingSnapshot
 from aqua_voting_tracker.voting.pagination import FakePagination, VotingSnapshotPagination
-from aqua_voting_tracker.voting.serializers import VotingSnapshotSerializer
+from aqua_voting_tracker.voting.serializers import VotingSnapshotSerializer, VotingSnapshotStatsSerializer
 
 
 class BaseVotingSnapshotView(GenericAPIView):
@@ -49,12 +49,10 @@ class TopVolumeSnapshotView(ListModelMixin, BaseVotingSnapshotView):
         return self.list(request, *args, **kwargs)
 
 
-class VotingSnapshotStatsView(APIView):
-    permission_classes = (AllowAny, )
-
+class VotingSnapshotStatsView(BaseVotingSnapshotView):
     def get(self, request, *args, **kwargs):
         stats = VotingSnapshot.objects.current_stats()
-        stats['votes_value_sum'] = str(stats['votes_value_sum'])
+        serializer = VotingSnapshotStatsSerializer(instance=stats, context=self.get_serializer_context())
         return Response(
-            stats,
+            serializer.data,
         )
