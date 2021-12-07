@@ -1,6 +1,8 @@
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from aqua_voting_tracker.utils.drf.filters import MultiGetFilterBackend
 from aqua_voting_tracker.voting.models import VotingSnapshot
@@ -45,3 +47,12 @@ class TopVolumeSnapshotView(ListModelMixin, BaseVotingSnapshotView):
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class VotingSnapshotStatsView(APIView):
+    permission_classes = (AllowAny, )
+
+    def get(self, request, *args, **kwargs):
+        return Response(
+            VotingSnapshot.objects.current_stats(),
+        )

@@ -13,8 +13,8 @@ class VoteQuerySet(models.QuerySet):
             models.Q(locked_at__lte=time_filter)
             & models.Q(
                 models.Q(claimed_back_at__isnull=True)
-                | models.Q(claimed_back_at__gt=time_filter)
-            )
+                | models.Q(claimed_back_at__gt=time_filter),
+            ),
         )
 
 
@@ -71,6 +71,14 @@ class VotingSnapshotManager(models.Manager):
     def filter_last_snapshot(self):
         last_snapshot_timestamp = self.order_by('-timestamp').values('timestamp')[:1]
         return self.filter(timestamp=models.Subquery(last_snapshot_timestamp))
+
+    def current_stats(self):
+        return self.filter_last_snapshot().aggregate(
+            market_key_count=models.Count('market_key'),
+            votes_value_sum=models.Sum('votes_value'),
+            voting_amount_sum=models.Sum('voting_amount'),
+            timestamp=models.Max('timestamp'),
+        )
 
 
 class VotingSnapshot(models.Model):

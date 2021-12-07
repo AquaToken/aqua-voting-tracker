@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from asgiref.sync import sync_to_async
 from dateutil.parser import parse as date_parse
-from stellar_sdk import Server, ServerAsync, AiohttpClient
+from stellar_sdk import AiohttpClient, Server, ServerAsync
 
 from aqua_voting_tracker.taskapp import app as celery_app
 from aqua_voting_tracker.utils.stellar.requests import load_all_records
