@@ -68,7 +68,7 @@ def task_load_new_claimable_balances():
 
 
 async def _update_claim_back_time(vote: Vote, *, server: ServerAsync, semaphore: Semaphore):
-    with semaphore:
+    async with semaphore:
         response = await server.operations().for_claimable_balance(vote.balance_id).order(desc=True).limit(1).call()
     operation = response['_embedded']['records'][0]
 
