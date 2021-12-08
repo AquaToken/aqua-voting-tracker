@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+from asyncio import Semaphore
 from typing import Iterable
 
 from django.conf import settings
@@ -66,8 +67,9 @@ def task_load_new_claimable_balances():
     Vote.objects.bulk_create(new_votes)
 
 
-async def _update_claim_back_time(vote: Vote, *, server: ServerAsync):
-    response = await server.operations().for_claimable_balance(vote.balance_id).order(desc=True).limit(1).call()
+async def _update_claim_back_time(vote: Vote, *, server: ServerAsync, semaphore: Semaphore):
+    with semaphore:
+        response = await server.operations().for_claimable_balance(vote.balance_id).order(desc=True).limit(1).call()
     operation = response['_embedded']['records'][0]
 
     if operation['type'] != 'claim_claimable_balance':
@@ -78,8 +80,9 @@ async def _update_claim_back_time(vote: Vote, *, server: ServerAsync):
 
 
 async def _bunch_update_claim_back_time(votes: Iterable[Vote]):
+    semaphore = Semaphore(10)
     async with ServerAsync(settings.HORIZON_URL, client=AiohttpClient(request_timeout=60)) as server:
-        await asyncio.gather(*[_update_claim_back_time(vote, server=server)
+        await asyncio.gather(*[_update_claim_back_time(vote, server=server, semaphore=semaphore)
                                for vote in votes])
 
 
