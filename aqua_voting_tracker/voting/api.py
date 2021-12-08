@@ -2,7 +2,6 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from aqua_voting_tracker.utils.drf.filters import MultiGetFilterBackend
 from aqua_voting_tracker.voting.models import VotingSnapshot
@@ -28,14 +27,6 @@ class MultiGetVotingSnapshotView(ListModelMixin, BaseVotingSnapshotView):
             return queryset.none()
 
         return queryset
-
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-
-class TopVotedSnapshotView(ListModelMixin, BaseVotingSnapshotView):
-    queryset = BaseVotingSnapshotView.queryset.order_by('-voting_amount')
-    pagination_class = VotingSnapshotPagination
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
