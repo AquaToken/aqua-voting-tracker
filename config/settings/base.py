@@ -42,6 +42,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     'aqua_voting_tracker.taskapp',
     'aqua_voting_tracker.voting',
+    'aqua_voting_tracker.voting_rewards',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
