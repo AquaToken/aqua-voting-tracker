@@ -5,6 +5,7 @@ from django.urls import include, path
 
 urlpatterns = [
     path('api/', include('aqua_voting_tracker.voting.urls')),
+    path('api/', include('aqua_voting_tracker.voting_rewards.urls')),
 ]
 
 

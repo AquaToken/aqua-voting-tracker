@@ -1,0 +1,22 @@
+from typing import Iterable, Mapping
+
+import requests
+
+from aqua_voting_tracker.voting.models import VotingSnapshot
+from aqua_voting_tracker.voting.serializers import VotingSnapshotSerializer, VotingSnapshotStatsSerializer
+
+
+def get_voting_rewards_candidate() -> Iterable[Mapping]:
+    queryset = VotingSnapshot.objects.filter_last_snapshot().order_by('-votes_value')[:100]
+    return VotingSnapshotSerializer(instance=queryset, many=True).data()
+
+
+def get_voting_stats() -> Mapping:
+    stats = VotingSnapshot.objects.current_stats()
+    return VotingSnapshotStatsSerializer(instance=stats).data()
+
+
+def get_market_pairs(market_keys: Iterable[str]) -> Iterable[Mapping]:
+    resp = requests.get('https://marketkeys-tracker.aqua.network/api/market-keys/',
+                        params=[('account_id', market_key) for market_key in market_keys])
+    return resp.json()['results']
