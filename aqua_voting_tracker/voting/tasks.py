@@ -105,7 +105,7 @@ def task_update_claim_back_time():
     if len(votes) < CLAIM_BACK_BUNCH_LIMIT:
         cache.delete(CLAIM_BACK_CURSOR_CACHE_KEY)
     else:
-        cache.set(CLAIM_BACK_BUNCH_LIMIT, votes[-1].id, None)
+        cache.set(CLAIM_BACK_CURSOR_CACHE_KEY, votes[-1].id, None)
 
 
 @celery_app.task(ignore_result=True)
