@@ -30,13 +30,20 @@ def get_current_reward() -> Iterable[Mapping]:
         for market_pair in market_pairs
     }
 
+    total_share = 0
     for reward_market in reward_zone:
         asset1, asset2 = market_pair_mapping[reward_market['market_key']]
         reward_market['asset1'] = asset1
         reward_market['asset2'] = asset2
 
-        reward_market['share'] = min(reward_market['votes_value'] / reward_zone_voting_value, settings.REWARD_MAX_SHARE)
-        reward_market['reward_value'] = round(settings.TOTAL_REWARD_VALUE * reward_market['share'])
+        reward_market['share'] = Decimal(round(
+            min(reward_market['votes_value'] / reward_zone_voting_value, settings.REWARD_MAX_SHARE),
+            2,
+        ))
+        total_share += reward_market['share']
+
+    for reward_market in reward_zone:
+        reward_market['reward_value'] = round(settings.TOTAL_REWARD_VALUE * reward_market['share'] / total_share)
 
         reward_market['amm_reward_value'] = round(reward_market['reward_value'] * settings.AMM_SHARE
                                                   / (settings.SDEX_SHARE + settings.AMM_SHARE))
