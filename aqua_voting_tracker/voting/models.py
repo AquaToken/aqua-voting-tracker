@@ -17,6 +17,12 @@ class VoteQuerySet(models.QuerySet):
             ),
         )
 
+    def annotate_stats(self):
+        return self.values('market_key').annotate(
+            votes_value=models.Sum('amount'),
+            voting_amount=models.Count('voting_account', distinct=True),
+        )
+
 
 class Vote(models.Model):
     balance_id = models.CharField(max_length=72, unique=True)
@@ -42,32 +48,6 @@ class Vote(models.Model):
 
 
 class VotingSnapshotManager(models.Manager):
-    def create_for_timestamp(self, timestamp, vote_queryset=None):
-        if vote_queryset is None:
-            vote_queryset = Vote.objects.all()
-
-        vote_stats = vote_queryset.filter_exist_at(timestamp).values('market_key').annotate(
-            votes_value=models.Sum('amount'),
-            voting_amount=models.Count('voting_account', distinct=True),
-        )
-
-        snapshot_list = []
-        vote_stats = sorted(vote_stats, key=lambda v: v['votes_value'], reverse=True)
-        for index, vote in enumerate(vote_stats):
-            snapshot_list.append(
-                self.model(
-                    market_key=vote['market_key'],
-                    rank=index + 1,
-                    votes_value=vote['votes_value'],
-                    voting_amount=vote['voting_amount'],
-                    timestamp=timestamp,
-                ),
-            )
-
-        self.bulk_create(snapshot_list)
-
-        return snapshot_list
-
     def filter_last_snapshot(self):
         last_snapshot_timestamp = self.order_by('-timestamp').values('timestamp')[:1]
         return self.filter(timestamp=models.Subquery(last_snapshot_timestamp))
@@ -87,6 +67,9 @@ class VotingSnapshot(models.Model):
 
     votes_value = models.DecimalField(max_digits=20, decimal_places=7)
     voting_amount = models.PositiveIntegerField()
+
+    upvote_value = models.DecimalField(max_digits=20, decimal_places=7)
+    downvote_value = models.DecimalField(max_digits=20, decimal_places=7)
 
     timestamp = models.DateTimeField()
 

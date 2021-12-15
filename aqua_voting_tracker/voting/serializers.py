@@ -6,7 +6,7 @@ from aqua_voting_tracker.voting.models import VotingSnapshot
 class VotingSnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = VotingSnapshot
-        fields = ['market_key', 'rank', 'votes_value', 'voting_amount', 'timestamp']
+        fields = ['market_key', 'rank', 'votes_value', 'voting_amount', 'upvote_value', 'downvote_value', 'timestamp']
 
 
 class VotingSnapshotStatsSerializer(serializers.Serializer):

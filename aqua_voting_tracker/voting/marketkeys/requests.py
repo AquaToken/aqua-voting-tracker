@@ -14,7 +14,7 @@ class ApiMarketKeysProvider(BaseMarketKeysProvider):
     def get_api_endpoint(self):
         return self.market_keys_tracker_host.rstrip('/') + self.api_endpoint
 
-    def __iter__(self) -> Iterator[str]:
+    def __iter__(self) -> Iterator[dict]:
         page_endpoint = self.get_api_endpoint() + '?limit=200'
 
         while page_endpoint:
@@ -25,5 +25,4 @@ class ApiMarketKeysProvider(BaseMarketKeysProvider):
             records = data['results']
             page_endpoint = data['next']
 
-            for record in records:
-                yield record['account_id']
+            yield from records

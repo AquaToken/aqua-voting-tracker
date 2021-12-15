@@ -2,7 +2,7 @@ from typing import Iterator
 
 
 class BaseMarketKeysProvider:
-    def __iter__(self) -> Iterator[str]:
+    def __iter__(self) -> Iterator[dict]:
         raise NotImplementedError()
 
 

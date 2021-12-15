@@ -114,6 +114,55 @@ def task_create_voting_snapshot():
     timestamp = now.replace(minute=now.minute // 5 * 5, second=0, microsecond=0) - timezone.timedelta(minutes=5)
 
     marketkeys_provider = get_marketkeys_provider()
-    vote_queryset = Vote.objects.filter(market_key__in=iter(marketkeys_provider))
-    vote_queryset = vote_queryset.filter_by_min_term(settings.VOTING_MIN_TERM)
-    VotingSnapshot.objects.create_for_timestamp(timestamp, vote_queryset=vote_queryset)
+    market_keys_list = list(marketkeys_provider)
+
+    vote_queryset = Vote.objects.filter_by_min_term(settings.VOTING_MIN_TERM).filter_exist_at(timestamp)
+    upvote_stats_mapping = {
+        stats['market_key']: stats
+        for stats in vote_queryset.filter(market_key__in=[
+            market_key['upvote_account_id'] for market_key in market_keys_list
+        ]).annotate_stats()
+    }
+    downvote_stats_mapping = {
+        stats['market_key']: stats
+        for stats in vote_queryset.filter(market_key__in=[
+            market_key['downvote_account_id'] for market_key in market_keys_list
+        ]).annotate_stats()
+    }
+
+    snapshot_list = []
+    for market_key in market_keys_list:
+        upvote_stats = upvote_stats_mapping.get(market_key['upvote_account_id'])
+        downvote_stats = downvote_stats_mapping.get(market_key['downvote_account_id'])
+
+        if not upvote_stats and not downvote_stats:
+            continue
+
+        snapshot = VotingSnapshot(
+            market_key=market_key['account_id'],
+            timestamp=timestamp,
+            votes_value=0,
+            voting_amount=0,
+        )
+
+        if upvote_stats:
+            snapshot.upvote_value = upvote_stats['votes_value']
+            snapshot.votes_value += upvote_stats['votes_value']
+            snapshot.voting_amount += upvote_stats['voting_amount']
+        else:
+            snapshot.upvote_value = 0
+
+        if downvote_stats:
+            snapshot.downvote_value = downvote_stats['votes_value']
+            # snapshot.votes_value -= downvote_stats['votes_value']
+            # snapshot.voting_amount += downvote_stats['voting_amount']
+        else:
+            snapshot.downvote_value = 0
+
+        snapshot_list.append(snapshot)
+
+    snapshot_list = sorted(snapshot_list, key=lambda s: s.votes_value, reverse=True)
+    for index, snapshot in enumerate(snapshot_list):
+        snapshot.rank = index + 1
+
+    VotingSnapshot.objects.bulk_create(snapshot_list)
