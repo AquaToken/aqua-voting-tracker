@@ -55,7 +55,7 @@ class VotingSnapshotManager(models.Manager):
     def current_stats(self):
         return self.filter_last_snapshot().aggregate(
             market_key_count=models.Count('market_key'),
-            votes_value_sum=models.Sum('votes_value'),
+            votes_value_sum=models.Sum(models.F('upvote_value') + models.F('downvote_value')),
             voting_amount_sum=models.Sum('voting_amount'),
             timestamp=models.Max('timestamp'),
         )

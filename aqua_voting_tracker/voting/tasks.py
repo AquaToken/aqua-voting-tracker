@@ -154,8 +154,8 @@ def task_create_voting_snapshot():
 
         if downvote_stats:
             snapshot.downvote_value = downvote_stats['votes_value']
-            # snapshot.votes_value -= downvote_stats['votes_value']
-            # snapshot.voting_amount += downvote_stats['voting_amount']
+            snapshot.votes_value -= downvote_stats['votes_value']
+            snapshot.voting_amount += downvote_stats['voting_amount']
         else:
             snapshot.downvote_value = 0
 
