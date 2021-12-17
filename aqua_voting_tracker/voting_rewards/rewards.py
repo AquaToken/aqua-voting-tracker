@@ -38,7 +38,7 @@ def get_current_reward() -> Iterable[Mapping]:
 
         reward_market['share'] = Decimal(round(
             min(reward_market['votes_value'] / reward_zone_voting_value, settings.REWARD_MAX_SHARE),
-            2,
+            4,
         ))
         total_share += reward_market['share']
 
