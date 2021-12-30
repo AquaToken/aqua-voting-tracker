@@ -62,7 +62,7 @@ class VotingSnapshotManager(models.Manager):
 
 
 class VotingSnapshot(models.Model):
-    market_key = models.CharField(max_length=56)
+    market_key = models.CharField(max_length=56, db_index=True)
     rank = models.PositiveIntegerField()
 
     votes_value = models.DecimalField(max_digits=20, decimal_places=7)
@@ -71,7 +71,7 @@ class VotingSnapshot(models.Model):
     upvote_value = models.DecimalField(max_digits=20, decimal_places=7)
     downvote_value = models.DecimalField(max_digits=20, decimal_places=7)
 
-    timestamp = models.DateTimeField()
+    timestamp = models.DateTimeField(db_index=True)
 
     objects = VotingSnapshotManager()
 
