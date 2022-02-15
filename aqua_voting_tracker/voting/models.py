@@ -71,6 +71,8 @@ class VotingSnapshot(models.Model):
     upvote_value = models.DecimalField(max_digits=20, decimal_places=7)
     downvote_value = models.DecimalField(max_digits=20, decimal_places=7)
 
+    adjusted_votes_value = models.DecimalField(max_digits=20, decimal_places=7)
+
     timestamp = models.DateTimeField(db_index=True)
 
     objects = VotingSnapshotManager()
