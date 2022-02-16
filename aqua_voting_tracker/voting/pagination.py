@@ -2,7 +2,7 @@ from rest_framework.pagination import BasePagination, PageNumberPagination
 from rest_framework.response import Response
 
 
-class VotingSnapshotPagination(PageNumberPagination):
+class BaseVotingPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'limit'
     max_page_size = 200

@@ -23,6 +23,11 @@ class VoteQuerySet(models.QuerySet):
             voting_amount=models.Count('voting_account', distinct=True),
         )
 
+    def annotate_by_voting_account(self):
+        return self.values('voting_account').annotate(
+            votes_value=models.Sum('amount'),
+        )
+
 
 class Vote(models.Model):
     balance_id = models.CharField(max_length=72, unique=True)
