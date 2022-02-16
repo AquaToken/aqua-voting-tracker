@@ -73,7 +73,9 @@ class VotingAccountStatsView(ListModelMixin, GenericAPIView):
         except (ValueError, OverflowError):
             raise ParseError()
 
-        return Vote.objects.filter_exist_at(
+        return Vote.objects.filter(
+            market_key=self.request.kwargs.get('market_key', ''),
+        ).filter_exist_at(
             timestamp,
         ).filter_by_min_term(
             settings.VOTING_MIN_TERM,
