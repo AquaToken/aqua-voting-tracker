@@ -74,7 +74,7 @@ class VotingAccountStatsView(ListModelMixin, GenericAPIView):
             raise ParseError()
 
         return Vote.objects.filter(
-            market_key=self.request.kwargs.get('market_key', ''),
+            market_key=self.kwargs.get('market_key', ''),
         ).filter_exist_at(
             timestamp,
         ).filter_by_min_term(
