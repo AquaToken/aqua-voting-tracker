@@ -1,7 +1,8 @@
 from typing import Iterable, Mapping
 
-import requests
 from django.conf import settings
+
+import requests
 
 from aqua_voting_tracker.voting.models import VotingSnapshot
 from aqua_voting_tracker.voting.serializers import VotingSnapshotSerializer, VotingSnapshotStatsSerializer
