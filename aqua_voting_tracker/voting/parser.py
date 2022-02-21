@@ -6,7 +6,7 @@ from aqua_voting_tracker.voting.models import Vote
 from aqua_voting_tracker.voting.utils import get_voting_asset
 
 
-def is_conflict_predicate(predicate: dict):
+def is_locked_predicate(predicate: dict):
     return predicate == {
         'not': {
             'unconditional': True,
@@ -32,7 +32,7 @@ def parse_claimants(claimable_balance: dict):
 
     sponsor_claimant, market_claimant = sorted(claimants, key=lambda cl: cl['destination'] == sponsor, reverse=True)
 
-    if not is_conflict_predicate(market_claimant['predicate']):
+    if not is_locked_predicate(market_claimant['predicate']):
         raise VoteParsingError('Market predicate not locked.')
 
     balance_locked_until = parse_claim_after_predicate(sponsor_claimant['predicate'])
