@@ -1,7 +1,9 @@
 import asyncio
+import decimal
 import logging
 import sys
 from asyncio import Semaphore
+from decimal import Decimal
 from typing import Iterable
 
 from django.conf import settings
@@ -121,6 +123,8 @@ def task_create_voting_snapshot():
 
     market_key_provider = get_marketkeys_provider()
     snapshot_list = []
+    adjusted_votes_total = 0
+    voting_boost_cap_dict = {}
     for market_key in market_key_provider.get_multiple(votes_aggregation.keys()):
         upvote_stats = votes_aggregation.get(market_key['upvote_account_id'])
         downvote_stats = votes_aggregation.get(market_key['downvote_account_id'])
@@ -149,9 +153,25 @@ def task_create_voting_snapshot():
         else:
             snapshot.downvote_value = 0
 
-        snapshot.adjusted_votes_value = snapshot.votes_value
+        try:
+            voting_boost = Decimal(market_key.get('voting_boost', 0))
+            voting_boost_cap = Decimal(market_key.get('voting_boost_cap', 0))
+        except decimal.InvalidOperation:
+            voting_boost = 0
+            voting_boost_cap = 0
+
+        if voting_boost_cap:
+            voting_boost_cap_dict[market_key['account_id']] = voting_boost_cap
+
+        snapshot.adjusted_votes_value = snapshot.votes_value * (1 + voting_boost)
+        adjusted_votes_total += snapshot.adjusted_votes_value
 
         snapshot_list.append(snapshot)
+
+    for snapshot in snapshot_list:
+        voting_boost_cap = voting_boost_cap_dict.get(snapshot.market_key, 0)
+        if snapshot.adjusted_votes_value / adjusted_votes_total > voting_boost_cap:
+            snapshot.adjusted_votes_value = max(adjusted_votes_total * voting_boost_cap, snapshot.votes_value)
 
     snapshot_list = sorted(snapshot_list, key=lambda s: s.votes_value, reverse=True)
     for index, snapshot in enumerate(snapshot_list):
