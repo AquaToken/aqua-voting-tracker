@@ -168,10 +168,18 @@ def task_create_voting_snapshot():
 
         snapshot_list.append(snapshot)
 
+    snapshot_list = sorted(snapshot_list, key=lambda s: s.adjusted_votes_value, reverse=True)
     for snapshot in snapshot_list:
         voting_boost_cap = voting_boost_cap_dict.get(snapshot.market_key, 0)
         if snapshot.adjusted_votes_value / adjusted_votes_total > voting_boost_cap:
-            snapshot.adjusted_votes_value = max(adjusted_votes_total * voting_boost_cap, snapshot.votes_value)
+            adjusted_votes_total_except_current = adjusted_votes_total - snapshot.adjusted_votes_value
+
+            # Solution of equality:
+            # adjusted_votes_value / (adjusted_votes_value + adjusted_votes_total_except_current) = voting_boost_cap
+            adjusted_votes_value = adjusted_votes_total_except_current * voting_boost_cap / (1 - voting_boost_cap)
+            snapshot.adjusted_votes_value = max(adjusted_votes_value, snapshot.votes_value)
+
+            adjusted_votes_total = adjusted_votes_total_except_current + snapshot.adjusted_votes_value
 
     snapshot_list = sorted(snapshot_list, key=lambda s: s.votes_value, reverse=True)
     for index, snapshot in enumerate(snapshot_list):
