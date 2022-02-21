@@ -8,13 +8,13 @@ from aqua_voting_tracker.voting_rewards.data import get_market_pairs, get_voting
 
 def get_current_reward() -> Iterable[Mapping]:
     current_stats = get_voting_stats()
-    total_voting_value = Decimal(current_stats['votes_value_sum'])
+    total_voting_value = Decimal(current_stats['adjusted_votes_value_sum'])
 
     reward_candidates = get_voting_rewards_candidate()
     reward_zone = []
     reward_zone_voting_value = 0
     for candidate in reward_candidates:
-        votes_value = Decimal(candidate['votes_value'])
+        votes_value = Decimal(candidate['adjusted_votes_value'])
         if votes_value / total_voting_value < settings.MIN_SHARE_FOR_REWARD_ZONE:
             break
 

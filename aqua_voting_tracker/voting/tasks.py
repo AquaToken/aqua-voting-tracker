@@ -181,7 +181,7 @@ def task_create_voting_snapshot():
 
             adjusted_votes_total = adjusted_votes_total_except_current + snapshot.adjusted_votes_value
 
-    snapshot_list = sorted(snapshot_list, key=lambda s: s.votes_value, reverse=True)
+    snapshot_list = sorted(snapshot_list, key=lambda s: s.adjusted_votes_value, reverse=True)
     for index, snapshot in enumerate(snapshot_list):
         snapshot.rank = index + 1
 
