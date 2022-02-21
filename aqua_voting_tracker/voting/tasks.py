@@ -15,7 +15,7 @@ from stellar_sdk import AiohttpClient, Server, ServerAsync
 from aqua_voting_tracker.taskapp import app as celery_app
 from aqua_voting_tracker.utils.stellar.requests import load_all_records
 from aqua_voting_tracker.voting.exceptions import VoteParsingError
-from aqua_voting_tracker.voting.marketkeys.base import get_marketkeys_provider
+from aqua_voting_tracker.voting.marketkeys import get_marketkeys_provider
 from aqua_voting_tracker.voting.models import Vote, VotingSnapshot
 from aqua_voting_tracker.voting.parser import parse_claimable_balance
 from aqua_voting_tracker.voting.utils import get_voting_asset
@@ -113,27 +113,17 @@ def task_create_voting_snapshot():
     now = timezone.now()
     timestamp = now.replace(minute=now.minute // 5 * 5, second=0, microsecond=0) - timezone.timedelta(minutes=5)
 
-    marketkeys_provider = get_marketkeys_provider()
-    market_keys_list = list(marketkeys_provider)
-
-    vote_queryset = Vote.objects.filter_by_min_term(settings.VOTING_MIN_TERM).filter_exist_at(timestamp)
-    upvote_stats_mapping = {
-        stats['market_key']: stats
-        for stats in vote_queryset.filter(market_key__in=[
-            market_key['upvote_account_id'] for market_key in market_keys_list
-        ]).annotate_stats()
-    }
-    downvote_stats_mapping = {
-        stats['market_key']: stats
-        for stats in vote_queryset.filter(market_key__in=[
-            market_key['downvote_account_id'] for market_key in market_keys_list
-        ]).annotate_stats()
+    queryset = Vote.objects.filter_by_min_term(settings.VOTING_MIN_TERM).filter_exist_at(timestamp)
+    votes_aggregation = {
+        stat['market_key']: stat
+        for stat in queryset.annotate_stats()
     }
 
+    market_key_provider = get_marketkeys_provider()
     snapshot_list = []
-    for market_key in market_keys_list:
-        upvote_stats = upvote_stats_mapping.get(market_key['upvote_account_id'])
-        downvote_stats = downvote_stats_mapping.get(market_key['downvote_account_id'])
+    for market_key in market_key_provider.get_multiple(votes_aggregation.keys()):
+        upvote_stats = votes_aggregation.get(market_key['upvote_account_id'])
+        downvote_stats = votes_aggregation.get(market_key['downvote_account_id'])
 
         if not upvote_stats and not downvote_stats:
             continue
@@ -158,6 +148,8 @@ def task_create_voting_snapshot():
             snapshot.voting_amount += downvote_stats['voting_amount']
         else:
             snapshot.downvote_value = 0
+
+        snapshot.adjusted_votes_value = snapshot.votes_value
 
         snapshot_list.append(snapshot)
 

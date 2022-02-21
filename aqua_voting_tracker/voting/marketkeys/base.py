@@ -1,11 +1,9 @@
-from typing import Iterator
+from typing import Iterator, Iterable
 
 
 class BaseMarketKeysProvider:
     def __iter__(self) -> Iterator[dict]:
         raise NotImplementedError()
 
-
-def get_marketkeys_provider():
-    from aqua_voting_tracker.voting.marketkeys.requests import ApiMarketKeysProvider
-    return ApiMarketKeysProvider()
+    def get_multiple(self, account_ids: Iterable[str]) -> Iterator[dict]:
+        raise NotImplementedError()
