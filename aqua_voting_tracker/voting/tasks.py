@@ -123,6 +123,7 @@ def task_create_voting_snapshot():
 
     market_key_provider = get_marketkeys_provider()
     snapshot_list = []
+    votes_total = 0
     adjusted_votes_total = 0
     voting_boost_cap_dict = {}
     for market_key in market_key_provider.get_multiple(votes_aggregation.keys()):
@@ -164,6 +165,7 @@ def task_create_voting_snapshot():
             voting_boost_cap_dict[market_key['account_id']] = voting_boost_cap
 
         snapshot.adjusted_votes_value = snapshot.votes_value * (1 + voting_boost)
+        votes_total += snapshot.votes_value
         adjusted_votes_total += snapshot.adjusted_votes_value
 
         snapshot_list.append(snapshot)
@@ -171,6 +173,10 @@ def task_create_voting_snapshot():
     snapshot_list = sorted(snapshot_list, key=lambda s: s.adjusted_votes_value, reverse=True)
     for snapshot in snapshot_list:
         voting_boost_cap = voting_boost_cap_dict.get(snapshot.market_key, 0)
+        if snapshot.votes_value / votes_total > voting_boost_cap:
+            snapshot.adjusted_votes_value = snapshot.votes_value
+            continue
+
         if snapshot.adjusted_votes_value / adjusted_votes_total > voting_boost_cap:
             adjusted_votes_total_except_current = adjusted_votes_total - snapshot.adjusted_votes_value
 
