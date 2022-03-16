@@ -9,7 +9,7 @@ from aqua_voting_tracker.voting.serializers import VotingSnapshotSerializer, Vot
 
 
 def get_voting_rewards_candidate() -> Iterable[Mapping]:
-    queryset = VotingSnapshot.objects.filter_last_snapshot().order_by('-votes_value')[:100]
+    queryset = VotingSnapshot.objects.filter_last_snapshot().order_by('-adjusted_votes_value')[:100]
     return VotingSnapshotSerializer(instance=queryset, many=True).data
 
 
