@@ -43,7 +43,7 @@ class MultiGetVotingSnapshotView(ListModelMixin, BaseVotingSnapshotView):
 
 
 class TopVolumeSnapshotView(ListModelMixin, BaseVotingSnapshotView):
-    queryset = BaseVotingSnapshotView.queryset.order_by('-votes_value')
+    queryset = BaseVotingSnapshotView.queryset.order_by('-adjusted_votes_value')
     pagination_class = BaseVotingPagination
 
     def get(self, request, *args, **kwargs):
