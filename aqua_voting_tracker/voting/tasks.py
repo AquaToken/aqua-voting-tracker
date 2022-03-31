@@ -1,9 +1,7 @@
 import asyncio
-import decimal
 import logging
 import sys
 from asyncio import Semaphore
-from decimal import Decimal
 from typing import Iterable
 
 from django.conf import settings
@@ -18,8 +16,9 @@ from aqua_voting_tracker.taskapp import app as celery_app
 from aqua_voting_tracker.utils.stellar.requests import load_all_records
 from aqua_voting_tracker.voting.exceptions import VoteParsingError
 from aqua_voting_tracker.voting.marketkeys import get_marketkeys_provider
-from aqua_voting_tracker.voting.models import Vote, VotingSnapshot
+from aqua_voting_tracker.voting.models import Vote
 from aqua_voting_tracker.voting.parser import parse_claimable_balance
+from aqua_voting_tracker.voting.services.snapshot_creation import SnapshotCreationUseCase
 from aqua_voting_tracker.voting.utils import get_voting_asset
 
 
@@ -115,80 +114,6 @@ def task_create_voting_snapshot():
     now = timezone.now()
     timestamp = now.replace(minute=now.minute // 5 * 5, second=0, microsecond=0) - timezone.timedelta(minutes=5)
 
-    queryset = Vote.objects.filter_by_min_term(settings.VOTING_MIN_TERM).filter_exist_at(timestamp)
-    votes_aggregation = {
-        stat['market_key']: stat
-        for stat in queryset.annotate_stats()
-    }
-
-    market_key_provider = get_marketkeys_provider()
-    snapshot_list = []
-    votes_total = 0
-    adjusted_votes_total = 0
-    voting_boost_cap_dict = {}
-    for market_key in market_key_provider.get_multiple(votes_aggregation.keys()):
-        upvote_stats = votes_aggregation.get(market_key['upvote_account_id'])
-        downvote_stats = votes_aggregation.get(market_key['downvote_account_id'])
-
-        if not upvote_stats and not downvote_stats:
-            continue
-
-        snapshot = VotingSnapshot(
-            market_key=market_key['account_id'],
-            timestamp=timestamp,
-            votes_value=0,
-            voting_amount=0,
-        )
-
-        if upvote_stats:
-            snapshot.upvote_value = upvote_stats['votes_value']
-            snapshot.votes_value += upvote_stats['votes_value']
-            snapshot.voting_amount += upvote_stats['voting_amount']
-        else:
-            snapshot.upvote_value = 0
-
-        if downvote_stats:
-            snapshot.downvote_value = downvote_stats['votes_value']
-            snapshot.votes_value -= downvote_stats['votes_value']
-            snapshot.voting_amount += downvote_stats['voting_amount']
-        else:
-            snapshot.downvote_value = 0
-
-        try:
-            voting_boost = Decimal(market_key.get('voting_boost', 0))
-            voting_boost_cap = Decimal(market_key.get('voting_boost_cap', 0))
-        except decimal.InvalidOperation:
-            voting_boost = 0
-            voting_boost_cap = 0
-
-        if voting_boost_cap:
-            voting_boost_cap_dict[market_key['account_id']] = voting_boost_cap
-
-        snapshot.adjusted_votes_value = snapshot.votes_value * (1 + voting_boost)
-        votes_total += snapshot.votes_value
-        adjusted_votes_total += snapshot.adjusted_votes_value
-
-        snapshot_list.append(snapshot)
-
-    snapshot_list = sorted(snapshot_list, key=lambda s: s.adjusted_votes_value, reverse=True)
-    for snapshot in snapshot_list:
-        voting_boost_cap = voting_boost_cap_dict.get(snapshot.market_key, 0)
-        if snapshot.votes_value / votes_total > voting_boost_cap:
-            snapshot.adjusted_votes_value = snapshot.votes_value
-            continue
-
-        if snapshot.adjusted_votes_value / adjusted_votes_total > voting_boost_cap:
-            adjusted_votes_total_except_current = adjusted_votes_total - snapshot.adjusted_votes_value
-
-            # Solution of equality:
-            # adjusted_votes_value / (adjusted_votes_value + adjusted_votes_total_except_current) = voting_boost_cap
-            adjusted_votes_value = adjusted_votes_total_except_current * voting_boost_cap / (1 - voting_boost_cap)
-            snapshot.adjusted_votes_value = max(adjusted_votes_value, snapshot.votes_value)
-
-            adjusted_votes_total = adjusted_votes_total_except_current + snapshot.adjusted_votes_value
-
-    snapshot_list = sorted(snapshot_list, key=lambda s: s.adjusted_votes_value, reverse=True)
-    for index, snapshot in enumerate(snapshot_list):
-        snapshot.rank = index + 1
-
-    VotingSnapshot.objects.bulk_create(snapshot_list)
+    SnapshotCreationUseCase(
+        get_marketkeys_provider(),
+    ).create_snapshot(timestamp)
