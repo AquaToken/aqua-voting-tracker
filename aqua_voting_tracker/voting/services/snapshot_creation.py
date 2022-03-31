@@ -149,7 +149,7 @@ class SnapshotCreationUseCase:
             yield snapshot_record
 
     def set_rank(self, snapshot: Iterable[SnapshotRecord]):
-        snapshot = sorted(snapshot, key=lambda sr: sr.adjusted_votes_value, reverse=True)
+        snapshot = sorted(snapshot, key=lambda sr: (sr.adjusted_votes_value, sr.votes_value), reverse=True)
         for index, snapshot_record in enumerate(snapshot):
             snapshot_record.rank = index + 1
             yield snapshot_record
