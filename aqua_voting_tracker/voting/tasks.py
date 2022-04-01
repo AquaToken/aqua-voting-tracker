@@ -15,6 +15,7 @@ from stellar_sdk import AiohttpClient, Server, ServerAsync
 from aqua_voting_tracker.taskapp import app as celery_app
 from aqua_voting_tracker.utils.stellar.requests import load_all_records
 from aqua_voting_tracker.voting.exceptions import VoteParsingError
+from aqua_voting_tracker.voting.loaders.operations import OperationLoader
 from aqua_voting_tracker.voting.marketkeys import get_marketkeys_provider
 from aqua_voting_tracker.voting.models import Vote
 from aqua_voting_tracker.voting.parser import parse_claimable_balance
@@ -107,6 +108,11 @@ def task_update_claim_back_time():
         cache.delete(CLAIM_BACK_CURSOR_CACHE_KEY)
     else:
         cache.set(CLAIM_BACK_CURSOR_CACHE_KEY, votes[-1].id, None)
+
+
+@celery_app.task(ignore_result=True)
+def task_run_operations_loader():
+    OperationLoader().run()
 
 
 @celery_app.task(ignore_result=True)

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
-from typing import Iterable, Iterator, List
+from typing import Iterable, Iterator
 
 from django.conf import settings
 
