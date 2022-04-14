@@ -1,3 +1,4 @@
+import logging
 from typing import Iterator
 
 from django.conf import settings
@@ -6,8 +7,10 @@ from django.core.cache import cache
 from dateutil.parser import parse as date_parse
 from stellar_sdk import Server
 
-from aqua_voting_tracker.utils.stellar.requests import load_all_records
 from aqua_voting_tracker.voting.models import Vote
+
+
+logger = logging.getLogger(__name__)
 
 
 class OperationLoader:
@@ -28,9 +31,12 @@ class OperationLoader:
     def load_operations(self) -> Iterator[dict]:
         horizon_server = self.get_server()
 
-        request_builder = horizon_server.operations().order(desc=False)
+        cursor = self.load_cursor()
+        request_builder = horizon_server.operations().order(desc=False).limit(self.PAGE_LIMIT)
+        if cursor:
+            request_builder = request_builder.cursor(cursor)
 
-        for record in load_all_records(request_builder, start_cursor=self.load_cursor(), page_size=self.PAGE_LIMIT):
+        for record in request_builder.stream():
             yield record
 
             self.save_cursor(record['paging_token'])
@@ -45,4 +51,6 @@ class OperationLoader:
 
     def run(self):
         for operation in self.load_operations():
+            logger.info(f'Process operation id: {operation["id"]}')
+
             self.update_claimed_back_time(operation)

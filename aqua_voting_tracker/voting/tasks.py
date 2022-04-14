@@ -111,11 +111,6 @@ def task_update_claim_back_time():
 
 
 @celery_app.task(ignore_result=True)
-def task_run_operations_loader():
-    OperationLoader().run()
-
-
-@celery_app.task(ignore_result=True)
 def task_create_voting_snapshot():
     now = timezone.now()
     timestamp = now.replace(minute=now.minute // 5 * 5, second=0, microsecond=0) - timezone.timedelta(minutes=5)
