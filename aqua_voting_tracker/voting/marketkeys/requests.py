@@ -47,6 +47,9 @@ class ApiMarketKeysProvider(BaseMarketKeysProvider):
                 chunk.remove(market_key['account_id'])
                 downvotes_account_ids.add(market_key['downvote_account_id'])
 
+                if market_key['auth_required'] or market_key['no_liquidity']:
+                    continue
+
                 yield market_key
 
             not_found_ids.extend(chunk)
@@ -59,4 +62,8 @@ class ApiMarketKeysProvider(BaseMarketKeysProvider):
             ])
             response.raise_for_status()
 
-            yield from response.json()['results']
+            for market_key in response.json()['results']:
+                if market_key['auth_required'] or market_key['no_liquidity']:
+                    continue
+
+                yield market_key
