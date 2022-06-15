@@ -45,7 +45,11 @@ class ApiMarketKeysProvider(BaseMarketKeysProvider):
 
             for market_key in response.json()['results']:
                 chunk.remove(market_key['account_id'])
-                downvotes_account_ids.add(market_key['downvote_account_id'])
+
+                if not market_key['downvote_account_id']:
+                    continue
+                else:
+                    downvotes_account_ids.add(market_key['downvote_account_id'])
 
                 if market_key['auth_required'] or market_key['no_liquidity']:
                     continue
