@@ -78,3 +78,6 @@ celerybeat-schedule
 # Env config file
 env.config
 .env
+
+# Celery beater config
+celerybeat-schedule.db
