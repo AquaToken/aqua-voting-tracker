@@ -106,7 +106,7 @@ Project built using django framework, so setup is similar to generic django proj
 
 #### Setup environment variable
 ```
-echo 'export DATABASE_URL="postgres://username@password:localhost/aqua_voting_tracker"' > .env
+echo 'export DATABASE_URL="postgres://username:password@localhost/aqua_voting_tracker"' > .env
 ```
 
 #### Migrate database
