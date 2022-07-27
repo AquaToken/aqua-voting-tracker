@@ -189,6 +189,9 @@ HORIZON_URL = NotImplemented
 VOTING_ASSET_CODE = NotImplemented
 VOTING_ASSET_ISSUER = NotImplemented
 
+VOTING_ASSETS = NotImplemented
+VOTING_BALANCES_DISTRIBUTOR = NotImplemented
+
 MARKETKEYS_TRACKER_URL = NotImplemented
 
 VOTING_MIN_TERM = timedelta(hours=1)

@@ -46,7 +46,7 @@ def _parse_vote(claimable_balance: dict):
 def task_load_new_claimable_balances():
     horizon_server = Server(settings.HORIZON_URL)
 
-    request_builder = horizon_server.claimable_balances().for_asset(get_voting_asset()).order(desc=False)
+    request_builder = horizon_server.claimable_balances().order(desc=False)
 
     cursor = cache.get(CLAIMABLE_BALANCES_CURSOR_CACHE_KEY, None)
 
@@ -77,7 +77,7 @@ async def _update_claim_back_time(vote: Vote, *, server: ServerAsync, semaphore:
         response = await server.operations().for_claimable_balance(vote.balance_id).order(desc=True).limit(1).call()
     operation = response['_embedded']['records'][0]
 
-    if operation['type'] != 'claim_claimable_balance':
+    if operation['type'] in ['claim_claimable_balance', 'clawback_claimable_balance']:
         return
 
     vote.claimed_back_at = date_parse(operation['created_at'])

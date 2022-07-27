@@ -36,6 +36,7 @@ class Vote(models.Model):
     market_key = models.CharField(max_length=56)
 
     amount = models.DecimalField(max_digits=20, decimal_places=7)
+    asset = models.CharField(max_length=69)
 
     locked_at = models.DateTimeField()
     locked_until = models.DateTimeField()

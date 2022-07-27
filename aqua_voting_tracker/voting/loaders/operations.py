@@ -42,7 +42,7 @@ class OperationLoader:
             self.save_cursor(record['paging_token'])
 
     def update_claimed_back_time(self, operation):
-        if operation['type'] != 'claim_claimable_balance':
+        if operation['type'] not in ['claim_claimable_balance', 'clawback_claimable_balance']:
             return
 
         balance_id = operation['balance_id']

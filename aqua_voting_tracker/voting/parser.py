@@ -1,9 +1,9 @@
+from django.conf import settings
+
 from dateutil.parser import parse as date_parse
 
-from aqua_voting_tracker.utils.stellar.asset import get_asset_string
 from aqua_voting_tracker.voting.exceptions import VoteParsingError
 from aqua_voting_tracker.voting.models import Vote
-from aqua_voting_tracker.voting.utils import get_voting_asset
 
 
 def is_locked_predicate(predicate: dict):
@@ -18,10 +18,12 @@ def parse_claim_after_predicate(predicate: dict):
     return predicate.get('not', {}).get('abs_before', None)
 
 
-def verify_asset(claimable_balance: dict):
+def parse_asset(claimable_balance: dict):
     asset = claimable_balance['asset']
-    if asset != get_asset_string(get_voting_asset()):
+    if asset not in settings.VOTING_ASSETS:
         raise VoteParsingError('Invalid asset.')
+
+    return asset
 
 
 def parse_claimants(claimable_balance: dict):
@@ -30,20 +32,22 @@ def parse_claimants(claimable_balance: dict):
     if len(claimants) != 2:
         raise VoteParsingError('Invalid claimants.')
 
-    sponsor_claimant, market_claimant = sorted(claimants, key=lambda cl: cl['destination'] == sponsor, reverse=True)
-
+    claim_back_claimant, market_claimant = sorted(claimants, key=lambda cl: is_locked_predicate(cl['predicate']))
     if not is_locked_predicate(market_claimant['predicate']):
         raise VoteParsingError('Market predicate not locked.')
 
-    balance_locked_until = parse_claim_after_predicate(sponsor_claimant['predicate'])
+    if claim_back_claimant['destination'] != sponsor and sponsor != settings.VOTING_BALANCES_DISTRIBUTOR:
+        raise VoteParsingError('Invalid claimant destination.')
+
+    balance_locked_until = parse_claim_after_predicate(claim_back_claimant['predicate'])
     if not balance_locked_until:
         raise VoteParsingError('Invalid predicate.')
 
-    return market_claimant['destination'], sponsor_claimant['destination'], balance_locked_until
+    return market_claimant['destination'], claim_back_claimant['destination'], balance_locked_until
 
 
 def parse_claimable_balance(claimable_balance: dict):
-    verify_asset(claimable_balance)
+    asset = parse_asset(claimable_balance)
 
     balance_id = claimable_balance['id']
     amount = claimable_balance['amount']
@@ -61,6 +65,7 @@ def parse_claimable_balance(claimable_balance: dict):
         voting_account=voting_key,
         market_key=market_key,
         amount=amount,
+        asset=asset,
         locked_at=balance_created_at,
         locked_until=locked_until,
     )
