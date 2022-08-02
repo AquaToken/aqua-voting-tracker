@@ -8,35 +8,35 @@ from aqua_voting_tracker.voting.parser import parse_claimable_balance
 class ParseClaimableBalanceTests(TestCase):
     def test_common_case(self):
         claimable_balance = {
-            "id": "00000000xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            "asset": "TEST:GBY6X4AJJEXS536TRURTET5AXETIQFICOM6LTTIIUF7G77F6FSVGZAIO",
-            "amount": "5.0000000",
-            "sponsor": "GBB6R36ZT74EJO6OZ2NYDXTQ5VRU777QPNOSO76IWDQBV2CBUBTOLKOF",
-            "last_modified_ledger": 38600000,
-            "last_modified_time": "2021-12-06T18:15:25Z",
-            "claimants": [
+            'id': '00000000xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+            'asset': 'TEST:GBY6X4AJJEXS536TRURTET5AXETIQFICOM6LTTIIUF7G77F6FSVGZAIO',
+            'amount': '5.0000000',
+            'sponsor': 'GBB6R36ZT74EJO6OZ2NYDXTQ5VRU777QPNOSO76IWDQBV2CBUBTOLKOF',
+            'last_modified_ledger': 38600000,
+            'last_modified_time': '2021-12-06T18:15:25Z',
+            'claimants': [
                 {
-                    "destination": "GBCH3CNHAZA7EPPWNKJJXWUDEGSDWRP4UYRYK6HEHBK6A7OHCUWO6B74",
-                    "predicate": {
-                        "not": {
-                            "unconditional": True
-                        }
-                    }
+                    'destination': 'GBCH3CNHAZA7EPPWNKJJXWUDEGSDWRP4UYRYK6HEHBK6A7OHCUWO6B74',
+                    'predicate': {
+                        'not': {
+                            'unconditional': True,
+                        },
+                    },
                 },
                 {
-                    "destination": "GBB6R36ZT74EJO6OZ2NYDXTQ5VRU777QPNOSO76IWDQBV2CBUBTOLKOF",
-                    "predicate": {
-                        "not": {
-                            "abs_before": "2022-06-06T18:15:25Z",
-                            "abs_before_epoch": "1654528525"
-                        }
-                    }
-                }
+                    'destination': 'GBB6R36ZT74EJO6OZ2NYDXTQ5VRU777QPNOSO76IWDQBV2CBUBTOLKOF',
+                    'predicate': {
+                        'not': {
+                            'abs_before': '2022-06-06T18:15:25Z',
+                            'abs_before_epoch': '1654528525',
+                        },
+                    },
+                },
             ],
-            "flags": {
-                "clawback_enabled": False
+            'flags': {
+                'clawback_enabled': False,
             },
-            "paging_token": "38600000-00000000xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            'paging_token': '38600000-00000000xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         }
 
         vote = parse_claimable_balance(claimable_balance)
@@ -51,35 +51,35 @@ class ParseClaimableBalanceTests(TestCase):
 
     def test_balance_from_distributor(self):
         claimable_balance = {
-            "id": "00000000xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            "asset": "TEST2:GBY6X4AJJEXS536TRURTET5AXETIQFICOM6LTTIIUF7G77F6FSVGZAIO",
-            "amount": "5.0000000",
-            "sponsor": "GBY6X4AJJEXS536TRURTET5AXETIQFICOM6LTTIIUF7G77F6FSVGZAIO",
-            "last_modified_ledger": 38600000,
-            "last_modified_time": "2021-12-06T18:15:25Z",
-            "claimants": [
+            'id': '00000000xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+            'asset': 'TEST2:GBY6X4AJJEXS536TRURTET5AXETIQFICOM6LTTIIUF7G77F6FSVGZAIO',
+            'amount': '5.0000000',
+            'sponsor': 'GBY6X4AJJEXS536TRURTET5AXETIQFICOM6LTTIIUF7G77F6FSVGZAIO',
+            'last_modified_ledger': 38600000,
+            'last_modified_time': '2021-12-06T18:15:25Z',
+            'claimants': [
                 {
-                    "destination": "GBCH3CNHAZA7EPPWNKJJXWUDEGSDWRP4UYRYK6HEHBK6A7OHCUWO6B74",
-                    "predicate": {
-                        "not": {
-                            "unconditional": True
-                        }
-                    }
+                    'destination': 'GBCH3CNHAZA7EPPWNKJJXWUDEGSDWRP4UYRYK6HEHBK6A7OHCUWO6B74',
+                    'predicate': {
+                        'not': {
+                            'unconditional': True,
+                        },
+                    },
                 },
                 {
-                    "destination": "GBB6R36ZT74EJO6OZ2NYDXTQ5VRU777QPNOSO76IWDQBV2CBUBTOLKOF",
-                    "predicate": {
-                        "not": {
-                            "abs_before": "2022-06-06T18:15:25Z",
-                            "abs_before_epoch": "1654528525"
-                        }
-                    }
-                }
+                    'destination': 'GBB6R36ZT74EJO6OZ2NYDXTQ5VRU777QPNOSO76IWDQBV2CBUBTOLKOF',
+                    'predicate': {
+                        'not': {
+                            'abs_before': '2022-06-06T18:15:25Z',
+                            'abs_before_epoch': '1654528525',
+                        },
+                    },
+                },
             ],
-            "flags": {
-                "clawback_enabled": False
+            'flags': {
+                'clawback_enabled': False,
             },
-            "paging_token": "38600000-00000000xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            'paging_token': '38600000-00000000xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
         }
 
         vote = parse_claimable_balance(claimable_balance)

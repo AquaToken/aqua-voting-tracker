@@ -43,8 +43,10 @@ class BoostApplyTest(TestCase):
 
         self.assertEqual(len(first), len(second))
         for first_record, second_record in zip(first, second):
-            msg = f'Different elements: ({first_record.market_key}, {first_record.adjusted_votes_value}) != ' \
-                  f'({second_record.market_key}, {second_record.adjusted_votes_value})'
+            msg = (
+                f'Different elements: ({first_record.market_key}, {first_record.adjusted_votes_value}) != '
+                f'({second_record.market_key}, {second_record.adjusted_votes_value})'
+            )
             self.assertEqual(first_record.market_key, second_record.market_key, msg)
             self.assertAlmostEqual(float(first_record.adjusted_votes_value), float(second_record.adjusted_votes_value),
                                    places=7, msg=msg)

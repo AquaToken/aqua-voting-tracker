@@ -19,7 +19,6 @@ from aqua_voting_tracker.voting.marketkeys import get_marketkeys_provider
 from aqua_voting_tracker.voting.models import Vote
 from aqua_voting_tracker.voting.parser import parse_claimable_balance
 from aqua_voting_tracker.voting.services.snapshot_creation import SnapshotCreationUseCase
-from aqua_voting_tracker.voting.utils import get_voting_asset
 
 
 logger = logging.getLogger()

@@ -24,7 +24,7 @@ def get_current_reward() -> Iterable[Mapping]:
         })
         reward_zone_voting_value += votes_value
 
-    market_pairs = get_market_pairs(map(lambda market: market['market_key'], reward_zone))
+    market_pairs = get_market_pairs((market['market_key'] for market in reward_zone))
     market_pair_mapping = {
         market_pair['account_id']: (market_pair['asset1'], market_pair['asset2'])
         for market_pair in market_pairs

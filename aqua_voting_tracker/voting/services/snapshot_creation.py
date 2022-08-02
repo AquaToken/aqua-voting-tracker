@@ -203,7 +203,7 @@ class SnapshotCreationUseCase:
                 extra={
                     'upvote_assets': [dataclasses.asdict(record) for record in snapshot_record.upvote_assets],
                     'downvote_assets': [dataclasses.asdict(record) for record in snapshot_record.downvote_assets],
-                }
+                },
             ))
 
         VotingSnapshot.objects.bulk_create(objects)
