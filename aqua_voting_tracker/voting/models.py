@@ -18,7 +18,7 @@ class VoteQuerySet(models.QuerySet):
         )
 
     def annotate_stats(self):
-        return self.values('market_key').annotate(
+        return self.values('market_key', 'asset').annotate(
             votes_value=models.Sum('amount'),
             voting_amount=models.Count('voting_account', distinct=True),
         )
@@ -81,6 +81,8 @@ class VotingSnapshot(models.Model):
     adjusted_votes_value = models.DecimalField(max_digits=20, decimal_places=7)
 
     timestamp = models.DateTimeField(db_index=True)
+
+    extra = models.JSONField()
 
     objects = VotingSnapshotManager()
 

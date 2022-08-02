@@ -1,7 +1,7 @@
-from dataclasses import dataclass
+import dataclasses
 from datetime import datetime
 from decimal import Decimal
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, List
 
 from django.conf import settings
 
@@ -9,7 +9,15 @@ from aqua_voting_tracker.voting.marketkeys.base import BaseMarketKeysProvider
 from aqua_voting_tracker.voting.models import Vote, VotingSnapshot
 
 
-@dataclass
+@dataclasses.dataclass
+class SnapshotAssetRecord:
+    asset: str
+
+    votes_sum: str = ''
+    votes_count: int = 0
+
+
+@dataclasses.dataclass
 class SnapshotRecord:
     market_key: str
     upvote_account_id: str
@@ -23,6 +31,9 @@ class SnapshotRecord:
 
     voting_amount: int = 0
     votes_value: Decimal = 0
+
+    upvote_assets: List[SnapshotAssetRecord] = dataclasses.field(default_factory=list)
+    downvote_assets: List[SnapshotAssetRecord] = dataclasses.field(default_factory=list)
 
     adjusted_votes_value: Decimal = 0
     rank: int = None
@@ -40,10 +51,16 @@ class SnapshotCreationUseCase:
 
     def get_votes_aggregation(self, timestamp: datetime) -> dict:
         queryset = Vote.objects.filter_by_min_term(self.VOTING_MIN_TERM).filter_exist_at(timestamp)
-        return {
-            stat['market_key']: stat
-            for stat in queryset.annotate_stats()
-        }
+
+        votes_aggregation = {}
+        for stat in queryset.annotate_stats():
+            market_key = stat['market_key']
+            if market_key not in votes_aggregation:
+                votes_aggregation[market_key] = []
+
+            votes_aggregation[market_key].append(stat)
+
+        return votes_aggregation
 
     def get_markets_data(self, market_keys: Iterable[str]) -> Iterator[SnapshotRecord]:
         yield from (
@@ -58,26 +75,38 @@ class SnapshotCreationUseCase:
 
     def set_votes_value(self, snapshot: Iterable[SnapshotRecord], votes_aggregation: dict) -> Iterator[SnapshotRecord]:
         for snapshot_record in snapshot:
-            upvote_stat = votes_aggregation.get(snapshot_record.upvote_account_id)
-            downvote_stat = votes_aggregation.get(snapshot_record.downvote_account_id)
+            upvote_stats = votes_aggregation.get(snapshot_record.upvote_account_id, [])
+            downvote_stats = votes_aggregation.get(snapshot_record.downvote_account_id, [])
 
-            if not upvote_stat and not downvote_stat:
+            if not upvote_stats and not downvote_stats:
                 continue
 
             snapshot_record.upvote_value = 0
             snapshot_record.downvote_value = 0
             snapshot_record.votes_value = 0
             snapshot_record.voting_amount = 0
+            snapshot_record.upvote_assets = []
+            snapshot_record.downvote_assets = []
 
-            if upvote_stat:
-                snapshot_record.upvote_value = upvote_stat['votes_value']
-                snapshot_record.votes_value += upvote_stat['votes_value']
-                snapshot_record.voting_amount += upvote_stat['voting_amount']
+            for stat in upvote_stats:
+                snapshot_record.upvote_value = stat['votes_value']
+                snapshot_record.votes_value += stat['votes_value']
+                snapshot_record.voting_amount += stat['voting_amount']
+                snapshot_record.upvote_assets.append(SnapshotAssetRecord(
+                    asset=stat['asset'],
+                    votes_sum=str(stat['votes_value']),
+                    votes_count=stat['voting_amount'],
+                ))
 
-            if downvote_stat:
-                snapshot_record.downvote_value = downvote_stat['votes_value']
-                snapshot_record.votes_value -= downvote_stat['votes_value']
-                snapshot_record.voting_amount += downvote_stat['voting_amount']
+            for stat in downvote_stats:
+                snapshot_record.downvote_value = stat['votes_value']
+                snapshot_record.votes_value -= stat['votes_value']
+                snapshot_record.voting_amount += stat['voting_amount']
+                snapshot_record.downvote_assets.append(SnapshotAssetRecord(
+                    asset=stat['asset'],
+                    votes_sum=str(stat['votes_value']),
+                    votes_count=stat['voting_amount'],
+                ))
 
             yield snapshot_record
 
@@ -170,6 +199,11 @@ class SnapshotCreationUseCase:
                 adjusted_votes_value=snapshot_record.adjusted_votes_value,
 
                 timestamp=timestamp,
+
+                extra={
+                    'upvote_assets': [dataclasses.asdict(record) for record in snapshot_record.upvote_assets],
+                    'downvote_assets': [dataclasses.asdict(record) for record in snapshot_record.downvote_assets],
+                }
             ))
 
         VotingSnapshot.objects.bulk_create(objects)
