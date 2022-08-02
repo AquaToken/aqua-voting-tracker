@@ -7,7 +7,7 @@ class VotingSnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = VotingSnapshot
         fields = ['market_key', 'rank', 'votes_value', 'voting_amount', 'adjusted_votes_value',
-                  'upvote_value', 'downvote_value', 'timestamp']
+                  'upvote_value', 'downvote_value', 'extra', 'timestamp']
 
 
 class VotingSnapshotStatsSerializer(serializers.Serializer):
