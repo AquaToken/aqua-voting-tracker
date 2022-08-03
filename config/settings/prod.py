@@ -106,9 +106,6 @@ HORIZON_URL = 'https://horizon.stellar.lobstr.co'
 # Voting configuration
 # --------------------------------------------------------------------------
 
-VOTING_ASSET_CODE = env('VOTING_ASSET_CODE')
-VOTING_ASSET_ISSUER = env('VOTING_ASSET_ISSUER')
-
 VOTING_ASSETS = env.list('VOTING_ASSETS')
 VOTING_BALANCES_DISTRIBUTOR = env('VOTING_BALANCES_DISTRIBUTOR')
 

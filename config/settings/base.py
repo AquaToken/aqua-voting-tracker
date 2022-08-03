@@ -186,9 +186,6 @@ HORIZON_URL = NotImplemented
 # Voting configuration
 # --------------------------------------------------------------------------
 
-VOTING_ASSET_CODE = NotImplemented
-VOTING_ASSET_ISSUER = NotImplemented
-
 VOTING_ASSETS = NotImplemented
 VOTING_BALANCES_DISTRIBUTOR = NotImplemented
 
