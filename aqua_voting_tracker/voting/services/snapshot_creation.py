@@ -89,7 +89,7 @@ class SnapshotCreationUseCase:
             snapshot_record.downvote_assets = []
 
             for stat in upvote_stats:
-                snapshot_record.upvote_value = stat['votes_value']
+                snapshot_record.upvote_value += stat['votes_value']
                 snapshot_record.votes_value += stat['votes_value']
                 snapshot_record.voting_amount += stat['voting_amount']
                 snapshot_record.upvote_assets.append(SnapshotAssetRecord(
@@ -99,7 +99,7 @@ class SnapshotCreationUseCase:
                 ))
 
             for stat in downvote_stats:
-                snapshot_record.downvote_value = stat['votes_value']
+                snapshot_record.downvote_value += stat['votes_value']
                 snapshot_record.votes_value -= stat['votes_value']
                 snapshot_record.voting_amount += stat['voting_amount']
                 snapshot_record.downvote_assets.append(SnapshotAssetRecord(
