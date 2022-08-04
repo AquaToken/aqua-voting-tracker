@@ -76,7 +76,7 @@ async def _update_claim_back_time(vote: Vote, *, server: ServerAsync, semaphore:
         response = await server.operations().for_claimable_balance(vote.balance_id).order(desc=True).limit(1).call()
     operation = response['_embedded']['records'][0]
 
-    if operation['type'] in ['claim_claimable_balance', 'clawback_claimable_balance']:
+    if operation['type'] not in ['claim_claimable_balance', 'clawback_claimable_balance']:
         return
 
     vote.claimed_back_at = date_parse(operation['created_at'])
