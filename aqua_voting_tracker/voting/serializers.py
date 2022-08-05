@@ -15,6 +15,7 @@ class VotingSnapshotStatsSerializer(serializers.Serializer):
     votes_value_sum = serializers.DecimalField(max_digits=20, decimal_places=7)
     voting_amount_sum = serializers.IntegerField()
     adjusted_votes_value_sum = serializers.DecimalField(max_digits=20, decimal_places=7)
+    total_votes_sum = serializers.DecimalField(max_digits=20, decimal_places=7)
     timestamp = serializers.DateTimeField()
 
 
