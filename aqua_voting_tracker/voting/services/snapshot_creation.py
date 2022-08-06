@@ -50,7 +50,9 @@ class SnapshotCreationUseCase:
         self.market_key_provider = market_key_provider
 
     def get_votes_aggregation(self, timestamp: datetime) -> dict:
-        queryset = Vote.objects.filter_by_min_term(self.VOTING_MIN_TERM).filter_exist_at(timestamp)
+        # TODO
+        # queryset = Vote.objects.filter_by_min_term(self.VOTING_MIN_TERM).filter_exist_at(timestamp)
+        queryset = Vote.objects.filter_exist_at(timestamp)
 
         votes_aggregation = {}
         for stat in queryset.annotate_stats():

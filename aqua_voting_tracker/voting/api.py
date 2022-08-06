@@ -77,8 +77,8 @@ class VotingAccountStatsView(ListModelMixin, GenericAPIView):
             market_key=self.kwargs.get('market_key', ''),
         ).filter_exist_at(
             timestamp,
-        ).filter_by_min_term(
-            settings.VOTING_MIN_TERM,
+        # ).filter_by_min_term(
+        #     settings.VOTING_MIN_TERM,
         ).annotate_by_voting_account().order_by('voting_account')
 
     def injection_timestamp(self):
