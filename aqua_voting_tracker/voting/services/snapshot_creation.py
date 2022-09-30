@@ -151,6 +151,9 @@ class SnapshotCreationUseCase:
         boost_cap = controversial_markets[0].voting_boost_cap
         adjusted_votes_value = 0
         while True:
+            if not controversial_markets:
+                break
+
             if len(controversial_markets) >= 1 / boost_cap:
                 snapshot_record = controversial_markets.pop(0)
                 snapshot_record.adjusted_votes_value = snapshot_record.boosted_value
