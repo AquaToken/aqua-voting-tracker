@@ -100,7 +100,7 @@ if SENTRY_ENABLED:
 # --------------------------------------------------------------------------
 
 STELLAR_PASSPHRASE = 'Public Global Stellar Network ; September 2015'
-HORIZON_URL = 'https://horizon.stellar.lobstr.co'
+HORIZON_URL = env('HORIZON_URL', default='https://horizon.stellar.org')
 
 
 # Voting configuration
