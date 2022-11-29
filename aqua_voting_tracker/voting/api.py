@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from django.conf import settings
 from django.utils import timezone
 
 from rest_framework.exceptions import ParseError
@@ -44,6 +43,14 @@ class MultiGetVotingSnapshotView(ListModelMixin, BaseVotingSnapshotView):
 
 class TopVolumeSnapshotView(ListModelMixin, BaseVotingSnapshotView):
     queryset = BaseVotingSnapshotView.queryset.order_by('-adjusted_votes_value', '-votes_value')
+    pagination_class = BaseVotingPagination
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class TopVotedSnapshotView(ListModelMixin, BaseVotingSnapshotView):
+    queryset = BaseVotingSnapshotView.queryset.order_by('-voting_amount')
     pagination_class = BaseVotingPagination
 
     def get(self, request, *args, **kwargs):
