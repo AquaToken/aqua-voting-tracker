@@ -197,7 +197,7 @@ VOTING_MIN_TERM = timedelta(hours=1)
 # Voting reward configuration
 # --------------------------------------------------------------------------
 
-MIN_SHARE_FOR_REWARD_ZONE = Decimal('0.01')
+MIN_SHARE_FOR_REWARD_ZONE = Decimal('0.005')
 REWARD_MAX_SHARE = Decimal('0.2')
 
 TOTAL_REWARD_VALUE = Decimal(7000000)
