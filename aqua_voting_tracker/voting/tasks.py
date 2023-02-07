@@ -2,7 +2,7 @@ import asyncio
 import logging
 import sys
 from asyncio import Semaphore
-from typing import Iterable
+from typing import Iterable, List
 
 from django.conf import settings
 from django.core.cache import cache
@@ -17,7 +17,7 @@ from aqua_voting_tracker.utils.stellar.requests import load_all_records
 from aqua_voting_tracker.voting.exceptions import VoteParsingError
 from aqua_voting_tracker.voting.marketkeys import get_marketkeys_provider
 from aqua_voting_tracker.voting.models import Vote
-from aqua_voting_tracker.voting.parser import parse_claimable_balance
+from aqua_voting_tracker.voting.parser import parse_claimable_balance, parse_claimable_balance_from_effects
 from aqua_voting_tracker.voting.services.snapshot_creation import SnapshotCreationUseCase
 
 
@@ -58,7 +58,8 @@ def task_load_new_claimable_balances():
             break
 
         vote = _parse_vote(claimable_balance)
-        if vote:
+        if vote and not Vote.objects.filter(balance_id=vote.balance_id).exists():
+            logger.warning('Old task get new claimable balance: %s', vote.balance_id)
             new_votes.append(vote)
 
         last_claimable_balance = claimable_balance
@@ -79,6 +80,7 @@ async def _update_claim_back_time(vote: Vote, *, server: ServerAsync, semaphore:
     if operation['type'] not in ['claim_claimable_balance', 'clawback_claimable_balance']:
         return
 
+    logger.warning('Old claim back task is still useful.')
     vote.claimed_back_at = date_parse(operation['created_at'])
     await sync_to_async(vote.save)()
 
@@ -116,3 +118,17 @@ def task_create_voting_snapshot():
     SnapshotCreationUseCase(
         get_marketkeys_provider(),
     ).create_snapshot(timestamp)
+
+
+@celery_app.task(ignore_result=True)
+def task_parse_create_claimable_balance_effects(effects: List[dict]):
+    try:
+        vote = parse_claimable_balance_from_effects(effects)
+    except VoteParsingError:
+        logger.warning('Invalid claimable balance.', exc_info=sys.exc_info())
+        return
+
+    if not Vote.objects.filter(balance_id=vote.balance_id).exists():
+        vote.save()
+    else:
+        logger.warning('Claimable balance duplicate: %s', vote.balance_id)
