@@ -1,6 +1,9 @@
 import logging
+from datetime import datetime, timezone
 from typing import Iterator, Optional, List
 
+from dateutil.parser import parse as date_parse
+from prometheus_client import Summary, Counter
 from stellar_sdk import Server
 from stellar_sdk.call_builder.call_builder_sync import BaseCallBuilder
 
@@ -9,9 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class StreamWorker:
-    def __init__(self, horizon_url='https://horizon-testnet.stellar.org'):
-        self.horizon_url = horizon_url
-        self.horizon_limit = 200
+    horizon_url = 'https://horizon-testnet.stellar.org'
+    horizon_limit = 200
 
     def get_server(self) -> Server:
         return Server(self.horizon_url)
@@ -73,3 +75,26 @@ class BunchedByOperationsEffectsStreamWorker(StreamWorker):
 
     def handle_operation_effects(self, operation_effects: List[dict]):
         raise NotImplementedError()
+
+
+class PrometheusMetricsMixin:
+    metrics_namespace = NotImplemented
+
+    def __init__(self, *args, **kwargs):
+        super(PrometheusMetricsMixin, self).__init__(*args, **kwargs)
+
+        self.entry_delay_summary = Summary(f'{self.metrics_namespace}_receive_entry_delay',
+                                           'Delay between creation of a entry and its receipt by the stream.')
+        self.entry_counter = Counter(f'{self.metrics_namespace}_processed_entries',
+                                     'Count of processed stream entries.')
+
+    def get_entry_created_at(self, entry: dict) -> datetime:
+        return date_parse(entry['created_at'])
+
+    def handle_entry(self, entry: dict):
+        now = datetime.now(timezone.utc)
+        created_at = self.get_entry_created_at(entry)
+        self.entry_delay_summary.observe((now - created_at).total_seconds())
+
+        super(PrometheusMetricsMixin, self).handle_entry(entry)
+        self.entry_counter.inc()

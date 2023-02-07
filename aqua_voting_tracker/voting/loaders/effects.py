@@ -3,22 +3,29 @@ from typing import Optional, List
 
 from django.conf import settings
 from django.core.cache import cache
+from prometheus_client import Counter
 
-from aqua_voting_tracker.utils.stellar.stream import BunchedByOperationsEffectsStreamWorker
+from aqua_voting_tracker.utils.stellar.stream import BunchedByOperationsEffectsStreamWorker, PrometheusMetricsMixin
 from aqua_voting_tracker.voting.tasks import task_parse_create_claimable_balance_effects
 
 
 logger = logging.getLogger(__name__)
 
 
-class EffectsStream(BunchedByOperationsEffectsStreamWorker):
-    def __init__(self, *args, **kwargs):
-        super(EffectsStream, self).__init__(
-            horizon_url=settings.HORIZON_URL,
-            *args, **kwargs
-        )
+class EffectsStream(PrometheusMetricsMixin, BunchedByOperationsEffectsStreamWorker):
+    horizon_url = settings.HORIZON_URL
 
-        self.cursor_cache_key = 'aqua_voting_tracker.voting.EFFECTS_CURSOR'
+    cursor_cache_key = 'aqua_voting_tracker.voting.EFFECTS_CURSOR'
+
+    metrics_namespace = f'{settings.PROMETHEUS_METRICS_NAMESPACE}_effects_stream'
+
+    def __init__(self, *args, **kwargs):
+        super(EffectsStream, self).__init__(*args, **kwargs)
+
+        self.processed_create_claimable_balance_counter = Counter(
+            f'{self.metrics_namespace}_processed_create_claimable_balance',
+            'Count of processed create claimable balance operations.',
+        )
 
     def save_cursor(self, cursor: str):
         cache.set(self.cursor_cache_key, cursor, None)
@@ -38,3 +45,4 @@ class EffectsStream(BunchedByOperationsEffectsStreamWorker):
                                                 if effect['type'] == 'claimable_balance_created')
         if claimable_balance_created_effect['asset'] in settings.VOTING_ASSETS:
             task_parse_create_claimable_balance_effects.delay(operation_effects)
+            self.processed_create_claimable_balance_counter.inc()

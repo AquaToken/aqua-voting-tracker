@@ -203,3 +203,9 @@ REWARD_MAX_SHARE = Decimal('0.2')
 TOTAL_REWARD_VALUE = Decimal(7000000)
 SDEX_SHARE = 2
 AMM_SHARE = 5
+
+
+# Prometheus configuration
+# --------------------------------------------------------------------------
+
+PROMETHEUS_METRICS_NAMESPACE = 'aqua_voting_tracker'
