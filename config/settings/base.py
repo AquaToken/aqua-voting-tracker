@@ -198,7 +198,7 @@ VOTING_MIN_TERM = timedelta(hours=1)
 # --------------------------------------------------------------------------
 
 MIN_SHARE_FOR_REWARD_ZONE = Decimal('0.005')
-REWARD_MAX_SHARE = Decimal('0.2')
+REWARD_MAX_SHARE = Decimal('0.1')
 
 TOTAL_REWARD_VALUE = Decimal(7000000)
 SDEX_SHARE = 2
