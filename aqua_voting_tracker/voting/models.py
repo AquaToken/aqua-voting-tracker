@@ -59,7 +59,7 @@ class VotingSnapshotManager(models.Manager):
         return self.filter(timestamp=models.Subquery(last_snapshot_timestamp))
 
     def current_stats(self):
-        return self.filter_last_snapshot().aggregate(
+        stats = self.filter_last_snapshot().aggregate(
             market_key_count=models.Count('market_key'),
             votes_value_sum=models.Sum('votes_value'),
             voting_amount_sum=models.Sum('voting_amount'),
@@ -67,6 +67,10 @@ class VotingSnapshotManager(models.Manager):
             total_votes_sum=models.Sum(models.F('upvote_value') + models.F('downvote_value')),
             timestamp=models.Max('timestamp'),
         )
+
+        stats['assets'] = list(VotingSnapshotAsset.objects.filter_last_snapshot().get_stats_by_assets())
+
+        return stats
 
 
 class VotingSnapshot(models.Model):
@@ -89,3 +93,33 @@ class VotingSnapshot(models.Model):
 
     def __str__(self):
         return f'{self.market_key} - {self.timestamp}'
+
+
+class VotingSnapshotAssetQuerySet(models.QuerySet):
+    def filter_last_snapshot(self):
+        return self.filter(snapshot__in=VotingSnapshot.objects.filter_last_snapshot())
+
+    def get_stats_by_assets(self):
+        return self.values('asset').annotate(
+            votes_sum=models.Sum('votes_sum'),
+            votes_count=models.Sum('votes_count'),
+        )
+
+
+class VotingSnapshotAsset(models.Model):
+    class Direction(models.IntegerChoices):
+        UP = 1
+        DOWN = 2
+
+    snapshot = models.ForeignKey(VotingSnapshot, related_name='assets', on_delete=models.CASCADE)
+    asset = models.CharField(max_length=69)
+
+    direction = models.PositiveSmallIntegerField(choices=Direction.choices)
+
+    votes_sum = models.DecimalField(max_digits=20, decimal_places=7)
+    votes_count = models.PositiveIntegerField()
+
+    objects = VotingSnapshotAssetQuerySet.as_manager()
+
+    def __str__(self):
+        return f'{self.snapshot} - {self.asset}'

@@ -4,9 +4,10 @@ from decimal import Decimal
 from typing import Iterable, Iterator, List
 
 from django.conf import settings
+from django.db.transaction import atomic
 
 from aqua_voting_tracker.voting.marketkeys.base import BaseMarketKeysProvider
-from aqua_voting_tracker.voting.models import Vote, VotingSnapshot
+from aqua_voting_tracker.voting.models import Vote, VotingSnapshot, VotingSnapshotAsset
 
 
 @dataclasses.dataclass
@@ -189,9 +190,10 @@ class SnapshotCreationUseCase:
             yield snapshot_record
 
     def save_snapshot(self, snapshot: Iterable[SnapshotRecord], timestamp: datetime):
-        objects = []
+        snapshot_objects = []
+        asset_objects = []
         for snapshot_record in snapshot:
-            objects.append(VotingSnapshot(
+            voting_snapshot = VotingSnapshot(
                 market_key=snapshot_record.market_key,
                 rank=snapshot_record.rank,
 
@@ -209,9 +211,29 @@ class SnapshotCreationUseCase:
                     'upvote_assets': [dataclasses.asdict(record) for record in snapshot_record.upvote_assets],
                     'downvote_assets': [dataclasses.asdict(record) for record in snapshot_record.downvote_assets],
                 },
-            ))
+            )
+            snapshot_objects.append(voting_snapshot)
 
-        VotingSnapshot.objects.bulk_create(objects)
+            for asset_record in snapshot_record.upvote_assets:
+                asset_objects.append(VotingSnapshotAsset(
+                    snapshot=voting_snapshot,
+                    asset=asset_record.asset,
+                    direction=VotingSnapshotAsset.Direction.UP,
+                    votes_sum=asset_record.votes_sum,
+                    votes_count=asset_record.votes_count,
+                ))
+            for asset_record in snapshot_record.downvote_assets:
+                asset_objects.append(VotingSnapshotAsset(
+                    snapshot=voting_snapshot,
+                    asset=asset_record.asset,
+                    direction=VotingSnapshotAsset.Direction.DOWN,
+                    votes_sum=asset_record.votes_sum,
+                    votes_count=asset_record.votes_count,
+                ))
+
+        with atomic():
+            VotingSnapshot.objects.bulk_create(snapshot_objects)
+            VotingSnapshotAsset.objects.bulk_create(asset_objects)
 
     def create_snapshot(self, timestamp: datetime):
         votes_aggregation = self.get_votes_aggregation(timestamp)
