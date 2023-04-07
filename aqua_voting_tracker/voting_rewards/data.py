@@ -15,7 +15,7 @@ def get_voting_rewards_candidate() -> Iterable[Mapping]:
 
 
 def get_voting_stats() -> Mapping:
-    stats = VotingSnapshot.objects.current_stats()
+    stats = VotingSnapshot.objects.filter_last_snapshot().current_stats()
     return VotingSnapshotStatsSerializer(instance=stats).data
 
 

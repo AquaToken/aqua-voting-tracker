@@ -53,13 +53,27 @@ class Vote(models.Model):
         return self.locked_until - self.locked_at
 
 
-class VotingSnapshotManager(models.Manager):
+class VotingSnapshotQuerySet(models.QuerySet):
     def filter_last_snapshot(self):
         last_snapshot_timestamp = self.order_by('-timestamp').values('timestamp')[:1]
         return self.filter(timestamp=models.Subquery(last_snapshot_timestamp))
 
+    def annotate_assets(self):
+        return self.prefetch_related(
+            models.Prefetch(
+                'assets',
+                queryset=VotingSnapshotAsset.objects.filter(direction=VotingSnapshotAsset.Direction.UP),
+                to_attr='upvote_assets',
+            ),
+            models.Prefetch(
+                'assets',
+                queryset=VotingSnapshotAsset.objects.filter(direction=VotingSnapshotAsset.Direction.DOWN),
+                to_attr='downvote_assets',
+            ),
+        )
+
     def current_stats(self):
-        stats = self.filter_last_snapshot().aggregate(
+        stats = self.aggregate(
             market_key_count=models.Count('market_key'),
             votes_value_sum=models.Sum('votes_value'),
             voting_amount_sum=models.Sum('voting_amount'),
@@ -89,7 +103,7 @@ class VotingSnapshot(models.Model):
 
     extra = models.JSONField()
 
-    objects = VotingSnapshotManager()
+    objects = VotingSnapshotQuerySet.as_manager()
 
     def __str__(self):
         return f'{self.market_key} - {self.timestamp}'

@@ -20,7 +20,7 @@ from aqua_voting_tracker.voting.serializers import (
 
 class BaseVotingSnapshotView(GenericAPIView):
     serializer_class = VotingSnapshotSerializer
-    queryset = VotingSnapshot.objects.filter_last_snapshot()
+    queryset = VotingSnapshot.objects.filter_last_snapshot().annotate_assets()
     permission_classes = (AllowAny, )
 
 
@@ -59,7 +59,7 @@ class TopVotedSnapshotView(ListModelMixin, BaseVotingSnapshotView):
 
 class VotingSnapshotStatsView(BaseVotingSnapshotView):
     def get(self, request, *args, **kwargs):
-        stats = VotingSnapshot.objects.current_stats()
+        stats = VotingSnapshot.objects.filter_last_snapshot().current_stats()
         serializer = VotingSnapshotStatsSerializer(instance=stats, context=self.get_serializer_context())
         return Response(
             serializer.data,
