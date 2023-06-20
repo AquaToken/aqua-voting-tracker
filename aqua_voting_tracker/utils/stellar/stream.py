@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime, timezone
-from typing import Iterator, Optional, List
+from typing import Iterator, List, Optional
 
 from dateutil.parser import parse as date_parse
-from prometheus_client import Summary, Counter
+from prometheus_client import Counter, Summary
 from stellar_sdk import Server
 from stellar_sdk.call_builder.call_builder_sync import BaseCallBuilder
 

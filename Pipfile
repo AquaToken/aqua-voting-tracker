@@ -41,6 +41,7 @@ requests = "*"
 django-redis = "*"
 more-itertools = "*"
 prometheus-client = "*"
+scipy = "*"
 
 [requires]
 python_version = "3.8"

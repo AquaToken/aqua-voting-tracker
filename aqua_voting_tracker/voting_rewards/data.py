@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Iterable, Mapping
 
 from django.conf import settings
@@ -8,8 +9,8 @@ from aqua_voting_tracker.voting.models import VotingSnapshot
 from aqua_voting_tracker.voting.serializers import VotingSnapshotSerializer, VotingSnapshotStatsSerializer
 
 
-def get_voting_rewards_candidate() -> Iterable[Mapping]:
-    limit = int(1 / settings.MIN_SHARE_FOR_REWARD_ZONE)
+def get_voting_rewards_candidate(reward_zone_min_share: Decimal) -> Iterable[Mapping]:
+    limit = int(1 / reward_zone_min_share)
     queryset = VotingSnapshot.objects.filter_last_snapshot().order_by('-adjusted_votes_value')[:limit]
     return VotingSnapshotSerializer(instance=queryset, many=True).data
 

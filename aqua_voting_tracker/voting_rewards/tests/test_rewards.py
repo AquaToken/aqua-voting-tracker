@@ -1,11 +1,12 @@
 from decimal import Decimal
-from typing import Any, Iterable, List, Mapping, Union
+from typing import Iterable, List, Union
 from unittest import TestCase
 from unittest.mock import patch
 
 from django.conf import settings
 
-from aqua_voting_tracker.voting_rewards.rewards import get_current_reward
+from aqua_voting_tracker.voting_rewards.services.rewards.base import MarketReward
+from aqua_voting_tracker.voting_rewards.services.rewards.v1 import RewardsV1Calculator
 
 
 def get_markets(market_keys: Iterable[str]):
@@ -35,39 +36,42 @@ def get_stats(candidates):
     }
 
 
-@patch('aqua_voting_tracker.voting_rewards.rewards.get_market_pairs', new=get_markets)
+@patch('aqua_voting_tracker.voting_rewards.services.rewards.base.get_market_pairs', new=get_markets)
 class GetCurrentRewardTestCase(TestCase):
-    def assert_rewards(self, rewards: List[Mapping[str, Any]]):
-        total_reward = sum(reward['reward_value'] for reward in rewards)
+    get_candidates_patch = 'aqua_voting_tracker.voting_rewards.services.rewards.base.get_voting_rewards_candidate'
+    get_stats_patch = 'aqua_voting_tracker.voting_rewards.services.rewards.base.get_voting_stats'
+
+    def assert_rewards(self, rewards: List[MarketReward]):
+        total_reward = sum(reward.reward_value for reward in rewards)
         self.assertLessEqual(total_reward, settings.TOTAL_REWARD_VALUE)
         self.assertAlmostEqual(
             total_reward,
             settings.TOTAL_REWARD_VALUE,
             delta=5,
         )
-        self.assertTrue(all(reward['reward_value'] == reward['amm_reward_value'] + reward['sdex_reward_value']
+        self.assertTrue(all(reward.reward_value == reward.amm_reward_value + reward.sdex_reward_value
                             for reward in rewards))
 
         self.assertAlmostEqual(
-            sum(float(reward['share']) for reward in rewards),
+            sum(float(reward.share) for reward in rewards),
             1,
             delta=0.0001,
         )
-        self.assertTrue(all(reward['share'] <= settings.REWARD_MAX_SHARE for reward in rewards))
+        self.assertTrue(all(reward.share <= settings.REWARD_MAX_SHARE for reward in rewards))
 
         prev_reward = rewards[0]
         for reward in rewards[1:]:
-            if prev_reward['share'] < settings.REWARD_MAX_SHARE:
-                votes_ratio = float(prev_reward['votes_value']) / float(reward['votes_value'])
-                self.assertAlmostEqual(float(prev_reward['share']) / float(reward['share']),
+            if prev_reward.share < settings.REWARD_MAX_SHARE:
+                votes_ratio = float(prev_reward.votes_value) / float(reward.votes_value)
+                self.assertAlmostEqual(float(prev_reward.share) / float(reward.share),
                                        votes_ratio, delta=0.01)
-                self.assertAlmostEqual(float(prev_reward['reward_value']) / float(reward['reward_value']),
+                self.assertAlmostEqual(float(prev_reward.reward_value) / float(reward.reward_value),
                                        votes_ratio, delta=0.01)
             prev_reward = reward
 
-    def assert_shares(self, rewards: List[Mapping[str, Any]], shares: List[Union[Decimal, str]]):
+    def assert_shares(self, rewards: List[MarketReward], shares: List[Union[Decimal, str]]):
         self.assertListEqual(
-            [reward['share'] for reward in rewards],
+            [reward.share for reward in rewards],
             [Decimal(share) for share in shares],
         )
 
@@ -75,9 +79,9 @@ class GetCurrentRewardTestCase(TestCase):
         candidates = get_candidates([95, 90, 85, 80, 75, 70, 65, 60, 55, 55, 50, 45, 40, 35, 30, 25, 20, 15, 10])
         stats = get_stats(candidates)
 
-        with patch('aqua_voting_tracker.voting_rewards.rewards.get_voting_rewards_candidate', new=lambda: candidates):
-            with patch('aqua_voting_tracker.voting_rewards.rewards.get_voting_stats', new=lambda: stats):
-                rewards = get_current_reward()
+        with patch(self.get_candidates_patch, new=lambda x: candidates):
+            with patch(self.get_stats_patch, new=lambda: stats):
+                rewards = RewardsV1Calculator().run()
 
         self.assert_rewards(rewards)
         self.assert_shares(rewards, [
@@ -89,9 +93,9 @@ class GetCurrentRewardTestCase(TestCase):
         candidates = get_candidates([50, 50, 50, 50, 30, 30, 20, 20, 10, 10, 10, 10, 10, 10, 10, 10, 5, 5, 5, 5])
         stats = get_stats(candidates)
 
-        with patch('aqua_voting_tracker.voting_rewards.rewards.get_voting_rewards_candidate', new=lambda: candidates):
-            with patch('aqua_voting_tracker.voting_rewards.rewards.get_voting_stats', new=lambda: stats):
-                rewards = get_current_reward()
+        with patch(self.get_candidates_patch, new=lambda x: candidates):
+            with patch(self.get_stats_patch, new=lambda: stats):
+                rewards = RewardsV1Calculator().run()
 
         self.assert_rewards(rewards)
         self.assert_shares(rewards, [
@@ -103,9 +107,9 @@ class GetCurrentRewardTestCase(TestCase):
         candidates = get_candidates([50, 50, 50, 50, 35, 30, 20, 20, 10, 10, 10, 10, 10, 10, 10, 10, 5, 5, 5])
         stats = get_stats(candidates)
 
-        with patch('aqua_voting_tracker.voting_rewards.rewards.get_voting_rewards_candidate', new=lambda: candidates):
-            with patch('aqua_voting_tracker.voting_rewards.rewards.get_voting_stats', new=lambda: stats):
-                rewards = get_current_reward()
+        with patch(self.get_candidates_patch, new=lambda x: candidates):
+            with patch(self.get_stats_patch, new=lambda: stats):
+                rewards = RewardsV1Calculator().run()
 
         self.assert_rewards(rewards)
         self.assert_shares(rewards, [

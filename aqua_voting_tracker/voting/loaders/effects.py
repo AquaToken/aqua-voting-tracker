@@ -1,8 +1,9 @@
 import logging
-from typing import Optional, List
+from typing import List, Optional
 
 from django.conf import settings
 from django.core.cache import cache
+
 from prometheus_client import Counter
 
 from aqua_voting_tracker.utils.stellar.stream import BunchedByOperationsEffectsStreamWorker, PrometheusMetricsMixin
@@ -34,7 +35,7 @@ class EffectsStream(PrometheusMetricsMixin, BunchedByOperationsEffectsStreamWork
         return cache.get(self.cursor_cache_key)
 
     def handle_operation_effects(self, operation_effects: List[dict]):
-        effects_types = set(effect['type'] for effect in operation_effects)
+        effects_types = {effect['type'] for effect in operation_effects}
         if 'claimable_balance_created' in effects_types:
             self.handle_create_claimable_balance(operation_effects)
 
