@@ -3,24 +3,63 @@ import math
 from scipy.integrate import quad
 
 
-ERROR_CAP = 1. / 1000
+ERROR_CAP = 1. / 10 ** 6
+SPLIT_LIMIT = 1000
+
+
+class SplitOverLimitError(Exception):
+    message = 'The partitioning process has reached its limit.'
+
+
+class IntegratePartition:
+    __slots__ = ('a', 'b', 'result', 'error')
+
+    def __init__(self, f, a, b, args=()):
+        self.a = a
+        self.b = b
+        self.result, self.error = quad(f, self.a, self.b, args=args)
+
+    def __repr__(self):
+        return f'{self.a}-{self.b}: {self.result}, {self.error}'
+
+    def split(self, f, args=()):
+        if self.b == math.inf:
+            split_point = self.a * 2
+        else:
+            split_point = (self.a + self.b) / 2
+
+        return (
+            IntegratePartition(f, self.a, split_point, args=args),
+            IntegratePartition(f, split_point, self.b, args=args),
+        )
 
 
 def _integrate(f, a, b, args=()):
-    result, error = quad(lambda x: f(x * a, *args), 1, b / a)
+    assert 0. < a <= b, "The partitioning flow cannot work with negative borders."
 
-    if result == 0 or error / result < ERROR_CAP:
-        return result * a, error * a
+    if a == b:
+        return 0., 0.
 
-    if b == math.inf:
-        split = 2 * a
-    else:
-        split = (a + b) / 2
+    partition_list = [
+        IntegratePartition(f, a, b, args=args),
+    ]
+    while True:
+        result_sum = sum(part.result for part in partition_list)
+        new_partition_list = []
 
-    result1, error1 = _integrate(f, a, split, args=args)
-    result2, error2 = _integrate(f, split, b, args=args)
+        for part in partition_list:
+            if part.error / result_sum > ERROR_CAP:
+                new_partition_list.extend(part.split(f, args=args))
+            else:
+                new_partition_list.append(part)
 
-    return result1 + result2, error1 + error2
+        if len(partition_list) == len(new_partition_list):
+            return result_sum, sum(part.error for part in partition_list)
+        else:
+            partition_list = new_partition_list
+
+        if len(partition_list) > SPLIT_LIMIT:
+            raise SplitOverLimitError()
 
 
 def integrate_piecewise(f, segments, args=()):
