@@ -15,7 +15,7 @@ class VotingRewardsView(APIView):
 
 # TODO: Temp views. Delete after using
 class VotingRewardsV2View(APIView):
-    def format_reward(self, reward):
+    def format_reward(self, reward, last_updated):
         asset1 = parse_asset_string(reward['asset1'])
         asset2 = parse_asset_string(reward['asset2'])
         return {
@@ -28,18 +28,20 @@ class VotingRewardsV2View(APIView):
             'daily_sdex_reward': reward['sdex_reward_value'],
             'daily_amm_reward': reward['amm_reward_value'],
             'daily_total_reward': reward['sdex_reward_value'] + reward['amm_reward_value'],
+            'last_updated': last_updated,
         }
 
     def get(self, request, *args, **kwargs):
         data = cache.get(REWARD_CACHE_KEY_V2, {})
         rewards = data.get('rewards', [])
+        last_updated = data.get('last_updated', '1970-01-01T00:00:00Z')
 
         return Response({
             'count': len(rewards),
             'next': None,
             'previous': None,
             'results': [
-                self.format_reward(reward)
+                self.format_reward(reward, last_updated)
                 for reward in rewards
             ],
         })
