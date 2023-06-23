@@ -39,4 +39,9 @@ def setup_periodic_tasks(sender, **kwargs):
             'schedule': crontab(minute=2),
             'args': (),
         },
+        'aqua_voting_tracker.voting_rewards.tasks.task_update_rewards_v2': {
+            'task': 'aqua_voting_tracker.voting_rewards.tasks.task_update_rewards_v2',
+            'schedule': crontab(minute=3),
+            'args': (),
+        },
     })
