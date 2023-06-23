@@ -27,6 +27,8 @@ class VotingRewardsV2View(APIView):
             },
             'daily_sdex_reward': reward['sdex_reward_value'],
             'daily_amm_reward': reward['amm_reward_value'],
+            'daily_sdex_percentage': reward['sdex_reward_percentage'],
+            'daily_amm_percentage': reward['amm_reward_percentage'],
             'daily_total_reward': reward['sdex_reward_value'] + reward['amm_reward_value'],
             'last_updated': last_updated,
         }

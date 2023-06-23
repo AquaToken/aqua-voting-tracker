@@ -31,6 +31,8 @@ def task_update_rewards_v2():
             'asset2': reward.asset2,
             'sdex_reward_value': reward.sdex_reward_value,
             'amm_reward_value': reward.amm_reward_value,
+            'sdex_reward_percentage': reward.sdex_share * 100,
+            'amm_reward_percentage': reward.amm_share * 100,
         }
         for reward in rewards
     ]
