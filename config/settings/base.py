@@ -204,6 +204,8 @@ TOTAL_REWARD_VALUE = Decimal(7000000)
 SDEX_SHARE = 2
 AMM_SHARE = 5
 
+SDEX_AMM_MIN_SHARE = Decimal('0.1')
+
 
 # Prometheus configuration
 # --------------------------------------------------------------------------

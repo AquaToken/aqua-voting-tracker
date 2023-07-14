@@ -21,6 +21,8 @@ class RewardsV2Calculator(RewardsCalculator):
         self.DEFAULT_SDEX_SHARE = Decimal(settings.SDEX_SHARE)
         self.DEFAULT_AMM_SHARE = Decimal(settings.AMM_SHARE)
 
+        self.SDEX_AMM_MIN_SHARE = Decimal(settings.SDEX_AMM_MIN_SHARE)
+
         self.distributor_class = ExponentDistributor
 
     def get_default_distribution(self):
@@ -61,6 +63,9 @@ class RewardsV2Calculator(RewardsCalculator):
                 sdex_share, amm_share = distributor.get_weights()
             else:
                 sdex_share, amm_share = self.get_default_distribution()
+
+            amm_share = max(amm_share, self.SDEX_AMM_MIN_SHARE)
+            amm_share = min(amm_share, 1 - self.SDEX_AMM_MIN_SHARE)
 
             amm_share = Decimal(amm_share).quantize(Decimal('0.00'))
 
