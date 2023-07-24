@@ -132,3 +132,16 @@ def task_parse_create_claimable_balance_effects(effects: List[dict]):
         vote.save()
     else:
         logger.warning('Claimable balance duplicate: %s', vote.balance_id)
+
+
+@celery_app.task(ignore_result=True)
+def task_parse_close_claimable_balance_effects(effects: List[dict]):
+    claimable_balance_claimed = 'claimable_balance_claimed'
+    claimable_balance_clawed_back = 'claimable_balance_clawed_back'
+    close_effect = next(effect for effect in effects
+                        if effect['type'] in {claimable_balance_claimed, claimable_balance_clawed_back})
+
+    balance_id = close_effect['balance_id']
+    closed_at = date_parse(close_effect['created_at'])
+
+    Vote.objects.filter(balance_id=balance_id).update(claimed_back_at=closed_at)
