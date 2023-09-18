@@ -3,13 +3,12 @@ from django.utils import timezone
 
 from aqua_voting_tracker.taskapp import app as celery_app
 from aqua_voting_tracker.voting_rewards.constants import REWARD_CACHE_KEY, REWARD_CACHE_KEY_V2
-from aqua_voting_tracker.voting_rewards.services.rewards.v1 import RewardsV1Calculator
 from aqua_voting_tracker.voting_rewards.services.rewards.v2 import RewardsV2Calculator
 
 
 @celery_app.task(ignore_result=True)
 def task_update_rewards():
-    rewards = RewardsV1Calculator().run()
+    rewards = RewardsV2Calculator().run()
     cleaned_rewards = [
         {
             'asset1': reward.asset1,
