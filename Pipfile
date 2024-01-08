@@ -36,7 +36,7 @@ djangorestframework = ">=3.10"
 gunicorn = "*"
 Django = ">=3.2,<4.0"
 python-dateutil = "*"
-stellar-sdk = "8.0.1"
+stellar-sdk = {extras = ["aiohttp"], version = "*"}
 requests = "*"
 django-redis = "*"
 more-itertools = "*"
