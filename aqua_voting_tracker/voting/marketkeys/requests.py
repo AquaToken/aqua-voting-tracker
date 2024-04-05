@@ -51,7 +51,7 @@ class ApiMarketKeysProvider(BaseMarketKeysProvider):
                 else:
                     downvotes_account_ids.add(market_key['downvote_account_id'])
 
-                if market_key['auth_required'] or market_key['no_liquidity']:
+                if market_key['is_banned']:
                     continue
 
                 yield market_key
@@ -67,7 +67,7 @@ class ApiMarketKeysProvider(BaseMarketKeysProvider):
             response.raise_for_status()
 
             for market_key in response.json()['results']:
-                if market_key['auth_required'] or market_key['no_liquidity']:
+                if market_key['is_banned']:
                     continue
 
                 yield market_key
