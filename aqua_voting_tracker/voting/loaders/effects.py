@@ -9,8 +9,11 @@ from stellar_sdk import Asset
 
 from aqua_voting_tracker.utils.stellar.asset import get_asset_string
 from aqua_voting_tracker.utils.stellar.stream import BunchedByOperationsEffectsStreamWorker, PrometheusMetricsMixin
-from aqua_voting_tracker.voting.tasks import task_parse_create_claimable_balance_effects, \
-    task_parse_close_claimable_balance_effects
+from aqua_voting_tracker.voting.tasks import (
+    task_parse_close_claimable_balance_effects,
+    task_parse_create_claimable_balance_effects,
+)
+
 
 logger = logging.getLogger(__name__)
 
