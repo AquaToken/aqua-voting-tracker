@@ -2,12 +2,12 @@ from django.core.cache import cache
 
 from aqua_voting_tracker.taskapp import app as celery_app
 from aqua_voting_tracker.voting_rewards.constants import REWARD_CACHE_KEY
-from aqua_voting_tracker.voting_rewards.services.rewards.v2 import RewardsV2Calculator
+from aqua_voting_tracker.voting_rewards.services.rewards.v1 import RewardsV1Calculator
 
 
 @celery_app.task(ignore_result=True)
 def task_update_rewards():
-    rewards = RewardsV2Calculator().run()
+    rewards = RewardsV1Calculator().run()
     cleaned_rewards = [
         {
             'asset1': reward.asset1,
