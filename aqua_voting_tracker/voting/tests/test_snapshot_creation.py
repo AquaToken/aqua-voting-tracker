@@ -126,6 +126,7 @@ class TestMarketKeysProvider(BaseMarketKeysProvider):
                 'upvote_account_id': md['upvote'],
                 'downvote_account_id': md['downvote'],
                 'voting_boost': md.get('voting_boost', 0),
+                'downvote_immunity': md.get('downvote_immunity', False)
             } for md in markets_data
         ]
         self.markets_data_by_upvote = {
@@ -160,12 +161,14 @@ class SnapshotCreationMarketsDataTestCase(TestCase):
             upvote_account_id=upvote_account1,
             downvote_account_id=downvote_account1,
             voting_boost=Decimal(0.3),
+            downvote_immunity=False,
         )
         self.snapshot_record2 = SnapshotRecord(
             market_key=upvote_account2,
             upvote_account_id=upvote_account2,
             downvote_account_id=downvote_account2,
             voting_boost=Decimal(0),
+            downvote_immunity=True,
         )
 
         market_keys_provider = TestMarketKeysProvider([
@@ -173,11 +176,13 @@ class SnapshotCreationMarketsDataTestCase(TestCase):
                 'upvote': upvote_account1,
                 'downvote': downvote_account1,
                 'voting_boost': 0.3,
+                'downvote_immunity': False,
             },
             {
                 'upvote': upvote_account2,
                 'downvote': downvote_account2,
                 'voting_boost': 0,
+                'downvote_immunity': True,
             },
         ])
         self.use_case = SnapshotCreationUseCase(market_keys_provider)
@@ -344,6 +349,64 @@ class SnapshotCreationVotesValueTestCase(TestCase):
         self.assertEqual(snapshot[0].downvote_assets[0], SnapshotAssetRecord(
             asset='VOTE3:GAT3XHMN2WXG62BDC3JGNANIA2Y53BCUAHO6B5UFZM2EITZRRYKEBGQ6',
             votes_sum='7',
+            votes_count=1,
+        ))
+
+    def test_set_votes_value_with_downvote_immunity(self):
+        self.snapshot_record1.downvote_immunity = True
+
+        snapshot = list(self.use_case.set_votes_value(self.snapshot, {
+            self.snapshot_record1.upvote_account_id: [
+                {
+                    'asset': 'VOTE:GAT3XHMN2WXG62BDC3JGNANIA2Y53BCUAHO6B5UFZM2EITZRRYKEBGQ6',
+                    'votes_value': Decimal(5),
+                    'voting_amount': 2,
+                },
+            ],
+            self.snapshot_record1.downvote_account_id: [
+                {
+                    'asset': 'VOTE:GAT3XHMN2WXG62BDC3JGNANIA2Y53BCUAHO6B5UFZM2EITZRRYKEBGQ6',
+                    'votes_value': Decimal(2),
+                    'voting_amount': 1,
+                },
+            ],
+            self.snapshot_record2.upvote_account_id: [
+                {
+                    'asset': 'VOTE:GAT3XHMN2WXG62BDC3JGNANIA2Y53BCUAHO6B5UFZM2EITZRRYKEBGQ6',
+                    'votes_value': Decimal(3),
+                    'voting_amount': 2,
+                },
+            ],
+            self.snapshot_record2.downvote_account_id: [
+                {
+                    'asset': 'VOTE:GAT3XHMN2WXG62BDC3JGNANIA2Y53BCUAHO6B5UFZM2EITZRRYKEBGQ6',
+                    'votes_value': Decimal(1),
+                    'voting_amount': 1,
+                },
+            ],
+        }))
+
+        self.assertEqual(snapshot[0].votes_value, Decimal(5))
+        self.assertEqual(snapshot[0].upvote_value, Decimal(5))
+        self.assertEqual(snapshot[0].downvote_value, Decimal(0))
+        self.assertEqual(snapshot[0].upvote_assets[0], SnapshotAssetRecord(
+            asset='VOTE:GAT3XHMN2WXG62BDC3JGNANIA2Y53BCUAHO6B5UFZM2EITZRRYKEBGQ6',
+            votes_sum='5',
+            votes_count=2,
+        ))
+        self.assertEqual(len(snapshot[0].downvote_assets), 0)
+
+        self.assertEqual(snapshot[1].votes_value, Decimal(2))
+        self.assertEqual(snapshot[1].upvote_value, Decimal(3))
+        self.assertEqual(snapshot[1].downvote_value, Decimal(1))
+        self.assertEqual(snapshot[1].upvote_assets[0], SnapshotAssetRecord(
+            asset='VOTE:GAT3XHMN2WXG62BDC3JGNANIA2Y53BCUAHO6B5UFZM2EITZRRYKEBGQ6',
+            votes_sum='3',
+            votes_count=2,
+        ))
+        self.assertEqual(snapshot[1].downvote_assets[0], SnapshotAssetRecord(
+            asset='VOTE:GAT3XHMN2WXG62BDC3JGNANIA2Y53BCUAHO6B5UFZM2EITZRRYKEBGQ6',
+            votes_sum='1',
             votes_count=1,
         ))
 

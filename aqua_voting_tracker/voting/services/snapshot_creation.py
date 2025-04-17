@@ -25,6 +25,7 @@ class SnapshotRecord:
     downvote_account_id: str
 
     voting_boost: Decimal = 0
+    downvote_immunity: bool = False
 
     upvote_value: Decimal = 0
     downvote_value: Decimal = 0
@@ -71,6 +72,7 @@ class SnapshotCreationUseCase:
                 upvote_account_id=market_key['upvote_account_id'],
                 downvote_account_id=market_key['downvote_account_id'],
                 voting_boost=Decimal(market_key.get('voting_boost', 0)),
+                downvote_immunity=market_key.get('downvote_immunity', False),
             ) for market_key in self.market_key_provider.get_multiple(market_keys)
         )
 
@@ -99,15 +101,16 @@ class SnapshotCreationUseCase:
                     votes_count=stat['voting_amount'],
                 ))
 
-            for stat in downvote_stats:
-                snapshot_record.downvote_value += stat['votes_value']
-                snapshot_record.votes_value -= stat['votes_value']
-                snapshot_record.voting_amount += stat['voting_amount']
-                snapshot_record.downvote_assets.append(SnapshotAssetRecord(
-                    asset=stat['asset'],
-                    votes_sum=str(stat['votes_value']),
-                    votes_count=stat['voting_amount'],
-                ))
+            if not snapshot_record.downvote_immunity:
+                for stat in downvote_stats:
+                    snapshot_record.downvote_value += stat['votes_value']
+                    snapshot_record.votes_value -= stat['votes_value']
+                    snapshot_record.voting_amount += stat['voting_amount']
+                    snapshot_record.downvote_assets.append(SnapshotAssetRecord(
+                        asset=stat['asset'],
+                        votes_sum=str(stat['votes_value']),
+                        votes_count=stat['voting_amount'],
+                    ))
 
             yield snapshot_record
 
