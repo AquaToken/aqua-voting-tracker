@@ -38,7 +38,7 @@ djangorestframework = ">=3.10"
 gunicorn = "*"
 Django = ">=3.2,<4.0"
 python-dateutil = "*"
-stellar-sdk = {extras = ["aiohttp"], version = "*"}
+stellar-sdk = "*"
 requests = "*"
 django-redis = "*"
 more-itertools = "*"
@@ -46,4 +46,4 @@ prometheus-client = "*"
 scipy = "*"
 
 [requires]
-python_version = "3.8"
+python_version = "3.12"
