@@ -9,6 +9,7 @@ from aqua_voting_tracker.voting.models import VotingSnapshot, VotingSnapshotAsse
 AST = VotingSnapshotAsset.Direction
 TOP_VOTED_URL = '/api/voting-snapshot/top-voted/'
 TOP_VOLUME_URL = '/api/voting-snapshot/top-volume/'
+TOP_URL = '/api/voting-snapshot/top/'
 MULTIGET_URL = '/api/voting-snapshot/'
 
 
@@ -253,3 +254,63 @@ class WhitelistedFilterTestCase(TestCase):
         self.assertEqual(data['count'], 1)
         self.assertEqual(data['results'][0]['market_key'], mk_whitelisted)
         self.assertTrue(data['results'][0]['whitelisted_for_rewards'])
+
+
+class OrderingTestCase(TestCase):
+    def _make_snapshot(self, market_key, *, voting_amount, votes_value, adjusted_votes_value, timestamp):
+        return VotingSnapshot.objects.create(
+            market_key=market_key,
+            rank=1,
+            votes_value=Decimal(votes_value),
+            voting_amount=voting_amount,
+            upvote_value=Decimal('0'),
+            downvote_value=Decimal('0'),
+            adjusted_votes_value=Decimal(adjusted_votes_value),
+            timestamp=timestamp,
+            extra={},
+            whitelisted_for_rewards=True,
+        )
+
+    def setUp(self):
+        ts = timezone.now()
+        # market_key: (voting_amount, votes_value, adjusted_votes_value)
+        self._make_snapshot('a', voting_amount=5, votes_value='30', adjusted_votes_value='30', timestamp=ts)
+        self._make_snapshot('b', voting_amount=20, votes_value='10', adjusted_votes_value='10', timestamp=ts)
+        self._make_snapshot('c', voting_amount=1, votes_value='20', adjusted_votes_value='20', timestamp=ts)
+
+    def _keys(self, url):
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        return [r['market_key'] for r in response.json()['results']]
+
+    def test_default_ordering_is_volume(self):
+        """No ?ordering= → default -adjusted_votes_value, -votes_value."""
+        self.assertEqual(self._keys(TOP_URL), ['a', 'c', 'b'])
+
+    def test_ordering_ascending(self):
+        """?ordering=voting_amount sorts ascending by field name."""
+        self.assertEqual(self._keys(TOP_URL + '?ordering=voting_amount'), ['c', 'a', 'b'])
+
+    def test_ordering_descending(self):
+        """?ordering=-voting_amount sorts descending."""
+        self.assertEqual(self._keys(TOP_URL + '?ordering=-voting_amount'), ['b', 'a', 'c'])
+
+    def test_ordering_multiple_fields(self):
+        """Comma-separated fields sort by more than one column."""
+        self.assertEqual(
+            self._keys(TOP_URL + '?ordering=-adjusted_votes_value,-votes_value'),
+            ['a', 'c', 'b'],
+        )
+
+    def test_ordering_not_whitelisted_field_ignored(self):
+        """A field outside ordering_fields is ignored → default ordering applies."""
+        self.assertEqual(self._keys(TOP_URL + '?ordering=market_key'), ['a', 'c', 'b'])
+
+    def test_aliases_keep_default_ordering(self):
+        """Legacy endpoints keep their original default ordering."""
+        self.assertEqual(self._keys(TOP_VOTED_URL), ['b', 'a', 'c'])
+        self.assertEqual(self._keys(TOP_VOLUME_URL), ['a', 'c', 'b'])
+
+    def test_alias_accepts_ordering_override(self):
+        """Legacy endpoints also honour an explicit ?ordering= override."""
+        self.assertEqual(self._keys(TOP_VOTED_URL + '?ordering=voting_amount'), ['c', 'a', 'b'])

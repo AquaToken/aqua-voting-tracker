@@ -4,6 +4,7 @@ from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework.exceptions import ParseError
+from rest_framework.filters import OrderingFilter
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import AllowAny
@@ -44,20 +45,42 @@ class MultiGetVotingSnapshotView(ListModelMixin, BaseVotingSnapshotView):
         return self.list(request, *args, **kwargs)
 
 
-class TopVolumeSnapshotView(ListModelMixin, BaseVotingSnapshotView):
-    queryset = BaseVotingSnapshotView.queryset.order_by('-adjusted_votes_value', '-votes_value')
+class VotingSnapshotListView(ListModelMixin, BaseVotingSnapshotView):
+    """
+    Paginated list of the latest voting snapshot rows.
+
+    Supports ordering via the ``?ordering=`` query param. Prefix a field with
+    ``-`` for descending order and pass several comma-separated fields to sort
+    by more than one column, e.g. ``?ordering=-adjusted_votes_value,-votes_value``.
+    Only the fields listed in ``ordering_fields`` are allowed; unknown fields are
+    silently ignored.
+    """
     pagination_class = BaseVotingPagination
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    ordering_fields = [
+        'rank',
+        'votes_value',
+        'voting_amount',
+        'upvote_value',
+        'downvote_value',
+        'adjusted_votes_value',
+        'timestamp',
+    ]
+    # Default ordering applied when ``?ordering=`` is not provided.
+    ordering = ['-adjusted_votes_value', '-votes_value']
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
 
-class TopVotedSnapshotView(ListModelMixin, BaseVotingSnapshotView):
-    queryset = BaseVotingSnapshotView.queryset.order_by('-voting_amount')
-    pagination_class = BaseVotingPagination
+class TopVolumeSnapshotView(VotingSnapshotListView):
+    """Deprecated alias of ``VotingSnapshotListView`` sorted by volume by default."""
+    ordering = ['-adjusted_votes_value', '-votes_value']
 
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
+
+class TopVotedSnapshotView(VotingSnapshotListView):
+    """Deprecated alias of ``VotingSnapshotListView`` sorted by voting amount by default."""
+    ordering = ['-voting_amount']
 
 
 class VotingSnapshotStatsView(BaseVotingSnapshotView):
