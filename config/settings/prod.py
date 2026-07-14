@@ -110,3 +110,9 @@ VOTING_ASSETS = env.list('VOTING_ASSETS')
 VOTING_BALANCES_DISTRIBUTOR = env('VOTING_BALANCES_DISTRIBUTOR')
 
 MARKETKEYS_TRACKER_URL = env('MARKETKEYS_TRACKER_URL')
+
+
+# Voting reward configuration
+# --------------------------------------------------------------------------
+
+SOROBAN_SHARE_BOOST = Decimal(env('SOROBAN_SHARE_BOOST', default='1'))
