@@ -43,6 +43,7 @@ def _parse_vote(claimable_balance: dict):
 
 @celery_app.task(ignore_result=True)
 def task_load_new_claimable_balances():
+    """Load votes at least once, publishing the cursor only after persistence."""
     horizon_server = Server(settings.HORIZON_URL)
 
     request_builder = horizon_server.claimable_balances().order(desc=False)
@@ -58,18 +59,20 @@ def task_load_new_claimable_balances():
             break
 
         vote = _parse_vote(claimable_balance)
-        if vote and not Vote.objects.filter(balance_id=vote.balance_id).exists():
+        if vote:
             logger.warning('Old task get new claimable balance: %s', vote.balance_id)
             new_votes.append(vote)
 
         last_claimable_balance = claimable_balance
 
+    # The unique balance_id is the replay/overlap arbiter. Persist the page
+    # before publishing its cursor so cache failures cause a harmless replay.
+    Vote.objects.bulk_create(new_votes, ignore_conflicts=True)
+
     if last_claimable_balance:
         cache.set(CLAIMABLE_BALANCES_CURSOR_CACHE_KEY,
                   last_claimable_balance['paging_token'],
                   None)
-
-    Vote.objects.bulk_create(new_votes)
 
 
 async def _update_claim_back_time(vote: Vote, *, server: ServerAsync, semaphore: Semaphore):
