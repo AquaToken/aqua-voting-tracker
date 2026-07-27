@@ -14,3 +14,8 @@ def parse_asset_string(asset_string: str) -> Asset:
 
     code, issuer = asset_string.split(':')
     return Asset(code, issuer)
+
+
+def is_contract_asset_string(asset_string: str) -> bool:
+    """Soroban assets are serialized as a bare contract id (C...), classic ones as CODE:ISSUER or 'native'."""
+    return asset_string.startswith('C') and ':' not in asset_string and len(asset_string) == 56

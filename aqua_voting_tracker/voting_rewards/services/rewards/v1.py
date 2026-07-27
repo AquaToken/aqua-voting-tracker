@@ -16,6 +16,16 @@ class RewardsV1Calculator(RewardsCalculator):
     def distribute_sdex_amm_rewards(self, reward_zone: Iterable[MarketReward]) -> Iterable[MarketReward]:
         amm_share = self.AMM_SHARE / (self.AMM_SHARE + self.SDEX_SHARE)
         for market_reward in reward_zone:
+            if market_reward.is_soroban:
+                # Soroban pairs have no classic SDEX/AMM markets: everything goes to soroban AMM.
+                market_reward.amm_share = Decimal(1)
+                market_reward.sdex_share = Decimal(0)
+                market_reward.amm_reward_value = market_reward.reward_value
+                market_reward.sdex_reward_value = 0
+
+                yield market_reward
+                continue
+
             market_reward.amm_share = Decimal(amm_share).quantize(Decimal('0.00'))
             market_reward.sdex_share = 1 - market_reward.amm_share
             market_reward.amm_reward_value = round(market_reward.reward_value * amm_share)

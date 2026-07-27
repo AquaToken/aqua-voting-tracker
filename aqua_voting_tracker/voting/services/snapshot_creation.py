@@ -72,7 +72,8 @@ class SnapshotCreationUseCase:
             SnapshotRecord(
                 market_key=market_key['account_id'],
                 upvote_account_id=market_key['upvote_account_id'],
-                downvote_account_id=market_key['downvote_account_id'],
+                # marketkeys-tracker no longer exposes downvote fields
+                downvote_account_id=market_key.get('downvote_account_id'),
                 voting_boost=Decimal(market_key.get('voting_boost', 0)),
                 downvote_immunity=market_key.get('downvote_immunity', False),
                 whitelisted_for_rewards=bool(market_key.get('whitelisted_for_rewards')),
@@ -178,6 +179,11 @@ class SnapshotCreationUseCase:
                 ))
 
         with atomic():
+            # Snapshot timestamps are rounded to the 5-minute grid, so a manual
+            # run within the same window as the beat one would create a second
+            # batch with the same timestamp and duplicate every market in
+            # filter_last_snapshot. Replace the batch instead.
+            VotingSnapshot.objects.filter(timestamp=timestamp).delete()
             VotingSnapshot.objects.bulk_create(snapshot_objects)
             VotingSnapshotAsset.objects.bulk_create(asset_objects)
 

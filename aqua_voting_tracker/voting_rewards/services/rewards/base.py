@@ -4,6 +4,7 @@ from typing import Iterable, List
 
 from django.conf import settings
 
+from aqua_voting_tracker.utils.stellar.asset import is_contract_asset_string
 from aqua_voting_tracker.voting_rewards.data import get_market_pairs, get_voting_rewards_candidate, get_voting_stats
 
 
@@ -16,6 +17,9 @@ class MarketReward:
     asset2: str = None
 
     whitelisted_for_rewards: bool = False
+    # True when at least one of the pair assets is a non-SAC soroban token.
+    # Such markets have no classic SDEX/AMM, so the whole reward goes to soroban AMM.
+    is_soroban: bool = False
 
     share: Decimal = None
     reward_value: Decimal = None
@@ -31,6 +35,7 @@ class RewardsCalculator:
         self.MIN_SHARE_FOR_REWARD_ZONE = Decimal(settings.MIN_SHARE_FOR_REWARD_ZONE)
         self.REWARD_MAX_SHARE = Decimal(settings.REWARD_MAX_SHARE)
         self.TOTAL_REWARDS = Decimal(settings.TOTAL_REWARD_VALUE)
+        self.SOROBAN_SHARE_BOOST = Decimal(settings.SOROBAN_SHARE_BOOST)
 
     def get_reward_zone(self) -> Iterable[MarketReward]:
         current_stats = get_voting_stats()
@@ -64,6 +69,10 @@ class RewardsCalculator:
             market_reward.asset1 = market_pair['asset1']
             market_reward.asset2 = market_pair['asset2']
             market_reward.whitelisted_for_rewards = bool(market_pair.get('whitelisted_for_rewards'))
+            market_reward.is_soroban = (
+                is_contract_asset_string(market_reward.asset1)
+                or is_contract_asset_string(market_reward.asset2)
+            )
 
             yield market_reward
 
@@ -90,6 +99,12 @@ class RewardsCalculator:
         # sub-7M payout is intended for the whitelist transition period.
         for market_reward in reward_zone:
             share = market_reward.votes_value / self.total_voting_value
+
+            # Boost soroban markets above their raw voting share to incentivize
+            # soroban AMM liquidity. The boost is applied before the cap, so a
+            # boosted market still cannot exceed REWARD_MAX_SHARE.
+            if market_reward.is_soroban:
+                share *= self.SOROBAN_SHARE_BOOST
 
             if share > self.REWARD_MAX_SHARE:
                 share = self.REWARD_MAX_SHARE

@@ -47,9 +47,11 @@ class RewardsV2Calculator(RewardsCalculator):
     def distribute_sdex_amm(self, reward_zone: Iterable[MarketReward]) -> Iterable[MarketReward]:
         reward_zone = list(reward_zone)
 
+        # Soroban pairs cannot be parsed into classic assets and have no
+        # classic SDEX/AMM liquidity to inspect: everything goes to soroban AMM.
         market_data_list = asyncio.run(self.load_markets_data([
             (parse_asset_string(market.asset1), parse_asset_string(market.asset2))
-            for market in reward_zone
+            for market in reward_zone if not market.is_soroban
         ]))
         market_data_dict = {
             (get_asset_string(market_data.asset1), get_asset_string(market_data.asset2)): market_data
@@ -57,6 +59,15 @@ class RewardsV2Calculator(RewardsCalculator):
         }
 
         for market_reward in reward_zone:
+            if market_reward.is_soroban:
+                market_reward.amm_share = Decimal(1)
+                market_reward.sdex_share = Decimal(0)
+                market_reward.amm_reward_value = market_reward.reward_value
+                market_reward.sdex_reward_value = 0
+
+                yield market_reward
+                continue
+
             market_data = market_data_dict[(market_reward.asset1, market_reward.asset2)]
             if market_data.is_loaded():
                 distributor = self.distributor_class(market_data)
