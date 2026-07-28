@@ -207,11 +207,6 @@ AMM_SHARE = 5
 
 SDEX_AMM_MIN_SHARE = Decimal('0.1')
 
-# Multiplier applied to the voting share of markets with soroban (non-SAC) tokens
-# to incentivize soroban AMM liquidity. 1 = no boost. Boosted share is still
-# capped by REWARD_MAX_SHARE.
-SOROBAN_SHARE_BOOST = Decimal('1')
-
 
 # Prometheus configuration
 # --------------------------------------------------------------------------

@@ -4,7 +4,6 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from django.conf import settings
-from django.test import override_settings
 
 from aqua_voting_tracker.voting_rewards.services.rewards.base import MarketReward
 from aqua_voting_tracker.voting_rewards.services.rewards.v1 import RewardsV1Calculator
@@ -266,32 +265,3 @@ class GetCurrentRewardTestCase(TestCase):
         self.assertEqual(soroban.sdex_share, Decimal(0))
         self.assertEqual(soroban.amm_reward_value, soroban.reward_value)
         self.assertEqual(soroban.sdex_reward_value, 0)
-
-    def test_soroban_share_boost_applied_before_cap(self):
-        # SOROBAN_SHARE_BOOST multiplies the voting share of soroban pairs
-        # before the cap: 4% -> 6% with boost 1.5. Classic shares stay raw and
-        # the dominant market still clamps to REWARD_MAX_SHARE.
-        candidates = get_candidates([900, 60, 40])
-        stats = get_stats(candidates)
-
-        with override_settings(SOROBAN_SHARE_BOOST=Decimal('1.5')):
-            with patch(self.get_candidates_patch, new=lambda x: candidates):
-                with patch(self.get_stats_patch, new=lambda: stats):
-                    with patch(
-                        'aqua_voting_tracker.voting_rewards.services.rewards.base.get_market_pairs',
-                        new=make_get_markets_with_soroban({2}),
-                    ):
-                        rewards = RewardsV1Calculator().run()
-
-        self.assertEqual(len(rewards), 3)
-        dominant, classic, soroban = rewards
-
-        self.assertEqual(dominant.share, Decimal('0.1'))  # 0.9 clamped to the cap
-        self.assertEqual(classic.share, Decimal('0.06'))  # raw, no boost
-        self.assertEqual(soroban.share, Decimal('0.06'))  # 0.04 * 1.5
-        self.assertEqual(
-            soroban.reward_value,
-            round(settings.TOTAL_REWARD_VALUE * Decimal('0.06')),
-        )
-        self.assertEqual(soroban.sdex_reward_value, 0)
-        self.assertEqual(soroban.amm_reward_value, soroban.reward_value)

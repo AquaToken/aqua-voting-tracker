@@ -102,9 +102,3 @@ VOTING_ASSETS = env.list('VOTING_ASSETS', default=[
 VOTING_BALANCES_DISTRIBUTOR = env('VOTING_BALANCES_DISTRIBUTOR', default=TESTNET_ICE_ISSUER)
 
 MARKETKEYS_TRACKER_URL = env('MARKETKEYS_TRACKER_URL', default='http://localhost:8000')
-
-
-# Voting reward configuration
-# --------------------------------------------------------------------------
-
-SOROBAN_SHARE_BOOST = Decimal(env('SOROBAN_SHARE_BOOST', default='1'))
