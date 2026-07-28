@@ -35,7 +35,6 @@ class RewardsCalculator:
         self.MIN_SHARE_FOR_REWARD_ZONE = Decimal(settings.MIN_SHARE_FOR_REWARD_ZONE)
         self.REWARD_MAX_SHARE = Decimal(settings.REWARD_MAX_SHARE)
         self.TOTAL_REWARDS = Decimal(settings.TOTAL_REWARD_VALUE)
-        self.SOROBAN_SHARE_BOOST = Decimal(settings.SOROBAN_SHARE_BOOST)
 
     def get_reward_zone(self) -> Iterable[MarketReward]:
         current_stats = get_voting_stats()
@@ -100,12 +99,13 @@ class RewardsCalculator:
         for market_reward in reward_zone:
             share = market_reward.votes_value / self.total_voting_value
 
-            # Boost soroban markets above their raw voting share to incentivize
-            # soroban AMM liquidity. The boost is applied before the cap, so a
-            # boosted market still cannot exceed REWARD_MAX_SHARE.
-            if market_reward.is_soroban:
-                share *= self.SOROBAN_SHARE_BOOST
-
+            # No soroban-specific multiplier here: a per-market incentive belongs in
+            # Asset.voting_boost (marketkeys-tracker), which lands in
+            # adjusted_votes_value and is therefore inside both the reward-zone
+            # threshold and this denominator. A multiplier applied at this point sits
+            # outside the denominator, so shares could sum above 1 and push the
+            # emitted total past TOTAL_REWARDS, and it could not pull a market into
+            # the reward zone in the first place.
             if share > self.REWARD_MAX_SHARE:
                 share = self.REWARD_MAX_SHARE
 
