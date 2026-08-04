@@ -24,6 +24,24 @@ DATABASES = {
 }
 
 
+# Cache
+# --------------------------------------------------------------------------
+# Shared cache is required: voting-rewards are computed by a celery/shell
+# process and read by the API process. The default LocMemCache is
+# per-process, so the API would never see the computed rewards.
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': env('CACHE_URL', default='redis://127.0.0.1:6379/3'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'KEY_PREFIX': 'aquavotingtracker',
+    },
+}
+
+
 # Email settings
 # --------------------------------------------------------------------------
 
@@ -74,11 +92,13 @@ HORIZON_URL = 'https://horizon-testnet.stellar.org'
 # Voting configuration
 # --------------------------------------------------------------------------
 
-VOTING_ASSETS = [
-    'TEST:GBY6X4AJJEXS536TRURTET5AXETIQFICOM6LTTIIUF7G77F6FSVGZAIO',
-    'TEST2:GBY6X4AJJEXS536TRURTET5AXETIQFICOM6LTTIIUF7G77F6FSVGZAIO',
-    # Secret key: SBUQ5JLWL47QI74KI6I2GMESVV644R4V5VA3VC6T3Q3YKHTODYVJP23O
-]
-VOTING_BALANCES_DISTRIBUTOR = 'GBY6X4AJJEXS536TRURTET5AXETIQFICOM6LTTIIUF7G77F6FSVGZAIO'
+# Testnet ICE distributor assets (issued for locking testnet AQUA).
+TESTNET_ICE_ISSUER = 'GAYYH44SS4OSFDY4WXMWM2BKRA2RG5M6NZULUQWGHKGFASFY2ZVI7IHX'
 
-MARKETKEYS_TRACKER_URL = 'http://localhost:8001'
+VOTING_ASSETS = env.list('VOTING_ASSETS', default=[
+    f'upvoteICE:{TESTNET_ICE_ISSUER}',
+    f'dICE:{TESTNET_ICE_ISSUER}',
+])
+VOTING_BALANCES_DISTRIBUTOR = env('VOTING_BALANCES_DISTRIBUTOR', default=TESTNET_ICE_ISSUER)
+
+MARKETKEYS_TRACKER_URL = env('MARKETKEYS_TRACKER_URL', default='http://localhost:8000')

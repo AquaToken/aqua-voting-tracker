@@ -4,6 +4,7 @@ from typing import Iterable, List
 
 from django.conf import settings
 
+from aqua_voting_tracker.utils.stellar.asset import is_contract_asset_string
 from aqua_voting_tracker.voting_rewards.data import get_market_pairs, get_voting_rewards_candidate, get_voting_stats
 
 
@@ -16,6 +17,9 @@ class MarketReward:
     asset2: str = None
 
     whitelisted_for_rewards: bool = False
+    # True when at least one of the pair assets is a non-SAC soroban token.
+    # Such markets have no classic SDEX/AMM, so the whole reward goes to soroban AMM.
+    is_soroban: bool = False
 
     share: Decimal = None
     reward_value: Decimal = None
@@ -64,6 +68,10 @@ class RewardsCalculator:
             market_reward.asset1 = market_pair['asset1']
             market_reward.asset2 = market_pair['asset2']
             market_reward.whitelisted_for_rewards = bool(market_pair.get('whitelisted_for_rewards'))
+            market_reward.is_soroban = (
+                is_contract_asset_string(market_reward.asset1)
+                or is_contract_asset_string(market_reward.asset2)
+            )
 
             yield market_reward
 
@@ -91,6 +99,13 @@ class RewardsCalculator:
         for market_reward in reward_zone:
             share = market_reward.votes_value / self.total_voting_value
 
+            # No soroban-specific multiplier here: a per-market incentive belongs in
+            # Asset.voting_boost (marketkeys-tracker), which lands in
+            # adjusted_votes_value and is therefore inside both the reward-zone
+            # threshold and this denominator. A multiplier applied at this point sits
+            # outside the denominator, so shares could sum above 1 and push the
+            # emitted total past TOTAL_REWARDS, and it could not pull a market into
+            # the reward zone in the first place.
             if share > self.REWARD_MAX_SHARE:
                 share = self.REWARD_MAX_SHARE
 
